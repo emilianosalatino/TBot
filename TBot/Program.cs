@@ -14,6 +14,7 @@ namespace Tbot
 {
     class Program
     {
+        /*Lorenzo 14/02/2021 prova nuovo branch*/
         static volatile OgamedService ogamedService;
 
         static volatile TelegramMessenger telegramMessenger;
