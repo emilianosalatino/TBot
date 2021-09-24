@@ -1,9 +1,9 @@
 ﻿{
 	"Credentials": {
-		"Universe": "",
-		"Email": "",
-		"Password": "",
-		"Language": "",
+		"Universe": "Atlas",
+		"Email": "dimenticato14@gmail.com",
+		"Password": "Dimenticato14",
+		"Language": "it",
 		"LobbyPioneers": false,
 		"BasicAuth": {
 			"Username": "",
@@ -12,7 +12,7 @@
 	},
 	"General": {
 		"UserAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/93.0.4577.82 Safari/537.36",
-		"Host": "localhost",
+		"Host": "192.168.1.2",
 		"Port": "8080",
 		"Proxy": {
 			"Enabled": false,

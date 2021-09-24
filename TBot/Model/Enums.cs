@@ -237,4 +237,14 @@ namespace Tbot.Model
 		FleetScheduler = 8,
 		SleepMode = 9
 	}
+
+	/*Stewie 24/09/2021*/
+	/*enum used by method of clSQL class to return a value*/
+	public enum enEsitoFunzione
+	{
+		kOk = 0,
+		kKo = -1,
+		DoNothing = -2
+	}
+
 }

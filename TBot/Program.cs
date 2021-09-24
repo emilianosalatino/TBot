@@ -8,6 +8,7 @@ using System.Threading.Tasks;
 using Tbot.Includes;
 using Tbot.Model;
 using Tbot.Services;
+using System.Reflection;
 
 namespace Tbot
 {
@@ -33,6 +34,8 @@ namespace Tbot
         static volatile List<FleetSchedule> scheduledFleets;
         static volatile bool isSleeping;
 
+        static clSQL xSQL;
+
         /*Lorenzo 07/02/2021
          * Added array of semaphore to manage the cuncurrency
          * for timers.
@@ -41,6 +44,7 @@ namespace Tbot
 
         static void Main(string[] args)
         {
+            //Stewie
             Helpers.SetTitle();
             isSleeping = false;
 
@@ -50,6 +54,9 @@ namespace Tbot
             settingsWatcher.NotifyFilter = NotifyFilters.LastWrite;
             settingsWatcher.Changed += new(OnSettingsChanged);
             settingsWatcher.EnableRaisingEvents = true;
+
+            xSQL = new clSQL();
+            xSQL.mInit();
 
             Credentials credentials = new()
             {
@@ -76,6 +83,7 @@ namespace Tbot
                 if ((bool)settings.General.Proxy.Enabled && (string)settings.General.Proxy.Address != "")
                 {
                     Helpers.WriteLog(LogType.Info, LogSender.Tbot, "Initializing proxy");
+                    xSQL.mLog(MethodBase.GetCurrentMethod().Name, (int)LogSender.Tbot, (int)LogType.Info, "Initializing proxy");
                     proxy.Enabled = (bool)settings.General.Proxy.Enabled;
                     proxy.Address = (string)settings.General.Proxy.Address;
                     proxy.Type = (string)settings.General.Proxy.Type ?? "socks5";
@@ -88,6 +96,7 @@ namespace Tbot
             catch (Exception e)
             {
                 Helpers.WriteLog(LogType.Error, LogSender.Tbot, "Unable to start ogamed: " + e.Message);
+                xSQL.mLog(MethodBase.GetCurrentMethod().Name, (int)LogSender.Tbot, (int)LogType.Error, "Unable to start ogamed: " + e.Message);
                 Helpers.WriteLog(LogType.Warning, LogSender.Tbot, "Stacktrace: " + e.StackTrace);
             }
 
@@ -98,6 +107,7 @@ namespace Tbot
             catch (Exception e)
             {
                 Helpers.WriteLog(LogType.Error, LogSender.Tbot, "Unable to set user agent: " + e.Message);
+                xSQL.mLog(MethodBase.GetCurrentMethod().Name, (int)LogSender.Tbot, (int)LogType.Error, "Unable to set user agent: " + e.Message);
                 Helpers.WriteLog(LogType.Warning, LogSender.Tbot, "Stacktrace: " + e.StackTrace);
             }
             Thread.Sleep(Helpers.CalcRandomInterval(IntervalType.LessThanASecond));
@@ -111,6 +121,7 @@ namespace Tbot
             catch (Exception e)
             {
                 Helpers.WriteLog(LogType.Error, LogSender.Tbot, "Unable to login: " + e.Message);
+                xSQL.mLog(MethodBase.GetCurrentMethod().Name, (int)LogSender.Tbot, (int)LogType.Error, "Unable to login: " + e.Message);
                 Helpers.WriteLog(LogType.Warning, LogSender.Tbot, "Stacktrace: " + e.StackTrace);
             }
             Thread.Sleep(Helpers.CalcRandomInterval(IntervalType.AFewSeconds));
@@ -141,6 +152,7 @@ namespace Tbot
                     if ((bool)settings.TelegramMessenger.Active)
                     {
                         Helpers.WriteLog(LogType.Info, LogSender.Tbot, "Activating Telegram Messenger");
+                        xSQL.mLog(MethodBase.GetCurrentMethod().Name, (int)LogSender.Tbot, (int)LogType.Info, "Activating Telegram Messenger");
                         telegramMessenger = new TelegramMessenger((string)settings.TelegramMessenger.API, (string)settings.TelegramMessenger.ChatId);
                         telegramMessenger.SendMessage("[" + userInfo.PlayerName + "@" + serverData.Name + "." + serverData.Language + "] TBot activated");
                     }
@@ -190,6 +202,7 @@ namespace Tbot
                 else
                 {
                     Helpers.WriteLog(LogType.Warning, LogSender.Tbot, "Account in vacation mode");
+                    xSQL.mLog(MethodBase.GetCurrentMethod().Name, (int)LogSender.Tbot, (int)LogType.Warning, "Account in vacation mode");
                 }
 
                 Console.ReadLine();
@@ -410,14 +423,22 @@ namespace Tbot
 
         private static void OnSettingsChanged(object sender, FileSystemEventArgs e)
         {
-            if (e.ChangeType != WatcherChangeTypes.Changed)
+            try
             {
-                return;
+                if (e.ChangeType != WatcherChangeTypes.Changed)
+                {
+                    return;
+                }
+                Helpers.WriteLog(LogType.Info, LogSender.Tbot, "Settings file changed");
+                xSQL.mLog(MethodBase.GetCurrentMethod().Name, (int)LogSender.Tbot, (int)LogType.Info, "Settings file changed");
+                ReadSettings();
+                InitializeFeatures();
+                UpdateTitle();
             }
-            Helpers.WriteLog(LogType.Info, LogSender.Tbot, "Settings file changed");
-            ReadSettings();
-            InitializeFeatures();
-            UpdateTitle();
+            catch (Exception ex)
+            {
+                xSQL.mLog(MethodBase.GetCurrentMethod().Name, (int)LogSender.Tbot, (int)LogType.Error, "Exception: " + ex.Message);
+            }
         }
 
         private static DateTime GetDateTime()
@@ -592,6 +613,7 @@ namespace Tbot
             catch (Exception e)
             {
                 Helpers.WriteLog(LogType.Debug, LogSender.Tbot, "Exception: " + e.Message);
+                xSQL.mLog(MethodBase.GetCurrentMethod().Name, (int)LogSender.Tbot, (int)LogType.Error, "Exception: " + e.Message);
                 Helpers.WriteLog(LogType.Warning, LogSender.Tbot, "Stacktrace: " + e.StackTrace);
                 Helpers.WriteLog(LogType.Warning, LogSender.Tbot, "An error has occurred. Skipping update");
             }
@@ -600,296 +622,473 @@ namespace Tbot
 
         private static void UpdateTitle(bool force = true, bool underAttack = false)
         {
-            if (force)
+            try
             {
-                serverInfo = UpdateServerInfo();
-                serverData = UpdateServerData();
-                userInfo = UpdateUserInfo();
-                celestials = UpdateCelestials();
-                researches = UpdateResearches();
-            }
-            string title = "[" + serverInfo.Name + "." + serverInfo.Language + "]" + " " + userInfo.PlayerName + " - Rank: " + userInfo.Rank + " - http://" + (string)settings.General.Host + ":" + (string)settings.General.Port;
-            if ((bool)settings.General.Proxy.Enabled)
-                title += " (Proxy active)";
-            if ((string)settings.General.CustomTitle != "")
-                title = (string)settings.General.CustomTitle + " - " + title;
-            if (underAttack)
-                title = "ENEMY ACTIVITY! - " + title;
+                if (force)
+                {
+                    serverInfo = UpdateServerInfo();
+                    serverData = UpdateServerData();
+                    userInfo = UpdateUserInfo();
+                    celestials = UpdateCelestials();
+                    researches = UpdateResearches();
+                }
+                string title = "[" + serverInfo.Name + "." + serverInfo.Language + "]" + " " + userInfo.PlayerName + " - Rank: " + userInfo.Rank + " - http://" + (string)settings.General.Host + ":" + (string)settings.General.Port;
+                if ((bool)settings.General.Proxy.Enabled)
+                    title += " (Proxy active)";
+                if ((string)settings.General.CustomTitle != "")
+                    title = (string)settings.General.CustomTitle + " - " + title;
+                if (underAttack)
+                    title = "ENEMY ACTIVITY! - " + title;
 
-            Helpers.SetTitle(title);
+                Helpers.SetTitle(title);
+            }
+            catch (Exception e)
+            {
+                xSQL.mLog(MethodBase.GetCurrentMethod().Name, (int)LogSender.Tbot, (int)LogType.Error, "Exception: " + e.Message);
+            }
         }
 
         private static void InitializeDefender()
         {
-            Helpers.WriteLog(LogType.Info, LogSender.Tbot, "Initializing defender...");
-            timers.Add("DefenderTimer", new Timer(Defender, null, Helpers.CalcRandomInterval(IntervalType.AFewSeconds), Helpers.CalcRandomInterval((int)settings.Defender.CheckIntervalMin, (int)settings.Defender.CheckIntervalMax)));
+            try
+            {
+                Helpers.WriteLog(LogType.Info, LogSender.Tbot, "Initializing defender...");
+                timers.Add("DefenderTimer", new Timer(Defender, null, Helpers.CalcRandomInterval(IntervalType.AFewSeconds), Helpers.CalcRandomInterval((int)settings.Defender.CheckIntervalMin, (int)settings.Defender.CheckIntervalMax)));
+                xSQL.mLog(MethodBase.GetCurrentMethod().Name, (int)LogSender.Tbot, (int)LogType.Info, "Defender Started");
+            }
+            catch (Exception e)
+            {
+                xSQL.mLog(MethodBase.GetCurrentMethod().Name, (int)LogSender.Tbot, (int)LogType.Error, "Exception: " + e.Message);
+            }
         }
 
         private static void StopDefender()
         {
-            Helpers.WriteLog(LogType.Info, LogSender.Tbot, "Stopping defender...");
-            timers.GetValueOrDefault("DefenderTimer").Dispose();
-            timers.Remove("DefenderTimer");
+            try
+            {
+                Helpers.WriteLog(LogType.Info, LogSender.Tbot, "Stopping defender...");
+                timers.GetValueOrDefault("DefenderTimer").Dispose();
+                timers.Remove("DefenderTimer");
+                xSQL.mLog(MethodBase.GetCurrentMethod().Name, (int)LogSender.Tbot, (int)LogType.Info, "Defender Stopped");
+            }
+            catch (Exception e)
+            {
+                xSQL.mLog(MethodBase.GetCurrentMethod().Name, (int)LogSender.Tbot, (int)LogType.Error, "Exception: " + e.Message);
+            }
         }
 
         private static void InitializeBrainAutoCargo()
         {
-            Helpers.WriteLog(LogType.Info, LogSender.Tbot, "Initializing autocargo...");
-            timers.Add("CapacityTimer", new Timer(AutoBuildCargo, null, Helpers.CalcRandomInterval(IntervalType.AMinuteOrTwo), Helpers.CalcRandomInterval((int)settings.Brain.AutoCargo.CheckIntervalMin, (int)settings.Brain.AutoCargo.CheckIntervalMax)));
+            try
+            {
+                Helpers.WriteLog(LogType.Info, LogSender.Tbot, "Initializing autocargo...");
+                timers.Add("CapacityTimer", new Timer(AutoBuildCargo, null, Helpers.CalcRandomInterval(IntervalType.AMinuteOrTwo), Helpers.CalcRandomInterval((int)settings.Brain.AutoCargo.CheckIntervalMin, (int)settings.Brain.AutoCargo.CheckIntervalMax)));
+                xSQL.mLog(MethodBase.GetCurrentMethod().Name, (int)LogSender.Tbot, (int)LogType.Info, "AutoCargo Started");
+            }
+            catch (Exception e)
+            {
+                xSQL.mLog(MethodBase.GetCurrentMethod().Name, (int)LogSender.Tbot, (int)LogType.Error, "Exception: " + e.Message);
+            }
         }
 
         private static void StopBrainAutoCargo()
         {
-            Helpers.WriteLog(LogType.Info, LogSender.Tbot, "Stopping autocargo...");
-            timers.GetValueOrDefault("CapacityTimer").Dispose();
-            timers.Remove("CapacityTimer");
+            try
+            {
+                Helpers.WriteLog(LogType.Info, LogSender.Tbot, "Stopping autocargo...");
+                timers.GetValueOrDefault("CapacityTimer").Dispose();
+                timers.Remove("CapacityTimer");
+                xSQL.mLog(MethodBase.GetCurrentMethod().Name, (int)LogSender.Tbot, (int)LogType.Info, "AutoCargo Stopped");
+            }
+            catch (Exception e)
+            {
+                xSQL.mLog(MethodBase.GetCurrentMethod().Name, (int)LogSender.Tbot, (int)LogType.Error, "Exception: " + e.Message);
+            }
         }
 
         private static void InitializeBrainRepatriate()
         {
-            Helpers.WriteLog(LogType.Info, LogSender.Tbot, "Initializing repatriate...");
-            timers.Add("RepatriateTimer", new Timer(AutoRepatriate, null, Helpers.CalcRandomInterval(IntervalType.SomeSeconds), Helpers.CalcRandomInterval((int)settings.Brain.AutoCargo.CheckIntervalMin, (int)settings.Brain.AutoCargo.CheckIntervalMax)));
+            try
+            {
+                Helpers.WriteLog(LogType.Info, LogSender.Tbot, "Initializing repatriate...");
+                timers.Add("RepatriateTimer", new Timer(AutoRepatriate, null, Helpers.CalcRandomInterval(IntervalType.SomeSeconds), Helpers.CalcRandomInterval((int)settings.Brain.AutoCargo.CheckIntervalMin, (int)settings.Brain.AutoCargo.CheckIntervalMax)));
+                xSQL.mLog(MethodBase.GetCurrentMethod().Name, (int)LogSender.Tbot, (int)LogType.Info, "Repatriate Started");
+            }
+            catch (Exception e)
+            {
+                xSQL.mLog(MethodBase.GetCurrentMethod().Name, (int)LogSender.Tbot, (int)LogType.Error, "Exception: " + e.Message);
+            }
         }
 
         private static void StopBrainRepatriate()
         {
-            Helpers.WriteLog(LogType.Info, LogSender.Tbot, "Stopping repatriate...");
-            timers.GetValueOrDefault("RepatriateTimer").Dispose();
-            timers.Remove("RepatriateTimer");
+            try
+            {
+                Helpers.WriteLog(LogType.Info, LogSender.Tbot, "Stopping repatriate...");
+                timers.GetValueOrDefault("RepatriateTimer").Dispose();
+                timers.Remove("RepatriateTimer");
+                xSQL.mLog(MethodBase.GetCurrentMethod().Name, (int)LogSender.Tbot, (int)LogType.Info, "Repatriate Stopped");
+            }
+            catch (Exception e)
+            {
+                xSQL.mLog(MethodBase.GetCurrentMethod().Name, (int)LogSender.Tbot, (int)LogType.Error, "Exception: " + e.Message);
+            }
         }
 
         private static void InitializeBrainAutoMine()
         {
-            Helpers.WriteLog(LogType.Info, LogSender.Tbot, "Initializing automine...");
-            timers.Add("AutoMineTimer", new Timer(AutoMine, null, Helpers.CalcRandomInterval(IntervalType.AFewSeconds), Helpers.CalcRandomInterval((int)settings.Brain.AutoCargo.CheckIntervalMin, (int)settings.Brain.AutoCargo.CheckIntervalMax)));
+            try
+            {
+                Helpers.WriteLog(LogType.Info, LogSender.Tbot, "Initializing automine...");
+                timers.Add("AutoMineTimer", new Timer(AutoMine, null, Helpers.CalcRandomInterval(IntervalType.AFewSeconds), Helpers.CalcRandomInterval((int)settings.Brain.AutoCargo.CheckIntervalMin, (int)settings.Brain.AutoCargo.CheckIntervalMax)));
+                xSQL.mLog(MethodBase.GetCurrentMethod().Name, (int)LogSender.Tbot, (int)LogType.Info, "AutoMine Started");
+            }
+            catch (Exception e)
+            {
+                xSQL.mLog(MethodBase.GetCurrentMethod().Name, (int)LogSender.Tbot, (int)LogType.Error, "Exception: " + e.Message);
+            }
         }
 
         private static void StopBrainAutoMine()
         {
-            Helpers.WriteLog(LogType.Info, LogSender.Tbot, "Stopping automine...");
-            timers.GetValueOrDefault("AutoMineTimer").Dispose();
-            timers.Remove("AutoMineTimer");
+            try
+            {
+                Helpers.WriteLog(LogType.Info, LogSender.Tbot, "Stopping automine...");
+                timers.GetValueOrDefault("AutoMineTimer").Dispose();
+                timers.Remove("AutoMineTimer");
+                xSQL.mLog(MethodBase.GetCurrentMethod().Name, (int)LogSender.Tbot, (int)LogType.Info, "AutoMine Stopped");
+            }
+            catch (Exception e)
+            {
+                xSQL.mLog(MethodBase.GetCurrentMethod().Name, (int)LogSender.Tbot, (int)LogType.Error, "Exception: " + e.Message);
+            }
         }
 
         private static void InitializeBrainOfferOfTheDay()
         {
-            Helpers.WriteLog(LogType.Info, LogSender.Tbot, "Initializing offer of the day...");
-            timers.Add("OfferOfTheDayTimer", new Timer(BuyOfferOfTheDay, null, Helpers.CalcRandomInterval(IntervalType.SomeSeconds), Helpers.CalcRandomInterval((int)settings.Brain.AutoCargo.CheckIntervalMin, (int)settings.Brain.AutoCargo.CheckIntervalMax)));
+            try
+            {
+                Helpers.WriteLog(LogType.Info, LogSender.Tbot, "Initializing offer of the day...");
+                timers.Add("OfferOfTheDayTimer", new Timer(BuyOfferOfTheDay, null, Helpers.CalcRandomInterval(IntervalType.SomeSeconds), Helpers.CalcRandomInterval((int)settings.Brain.AutoCargo.CheckIntervalMin, (int)settings.Brain.AutoCargo.CheckIntervalMax)));
+                xSQL.mLog(MethodBase.GetCurrentMethod().Name, (int)LogSender.Tbot, (int)LogType.Info, "OfferOfTheDay Started");
+            }
+            catch (Exception e)
+            {
+                xSQL.mLog(MethodBase.GetCurrentMethod().Name, (int)LogSender.Tbot, (int)LogType.Error, "Exception: " + e.Message);
+            }
         }
 
         private static void StopBrainOfferOfTheDay()
         {
-            Helpers.WriteLog(LogType.Info, LogSender.Tbot, "Stopping offer of the day...");
-            timers.GetValueOrDefault("OfferOfTheDayTimer").Dispose();
-            timers.Remove("OfferOfTheDayTimer");
+            try
+            {
+                Helpers.WriteLog(LogType.Info, LogSender.Tbot, "Stopping offer of the day...");
+                timers.GetValueOrDefault("OfferOfTheDayTimer").Dispose();
+                timers.Remove("OfferOfTheDayTimer");
+                xSQL.mLog(MethodBase.GetCurrentMethod().Name, (int)LogSender.Tbot, (int)LogType.Info, "OfferOfTheDay Stopped");
+            }
+            catch (Exception e)
+            {
+                xSQL.mLog(MethodBase.GetCurrentMethod().Name, (int)LogSender.Tbot, (int)LogType.Error, "Exception: " + e.Message);
+            }
         }
 
         private static void InitializeBrainAutoResearch()
         {
-            Helpers.WriteLog(LogType.Info, LogSender.Tbot, "Initializing autoresearch...");
-            timers.Add("AutoResearchTimer", new Timer(AutoResearch, null, Helpers.CalcRandomInterval(IntervalType.AFewSeconds), Helpers.CalcRandomInterval((int)settings.Brain.AutoResearch.CheckIntervalMin, (int)settings.Brain.AutoResearch.CheckIntervalMax)));
+            try
+            {
+                Helpers.WriteLog(LogType.Info, LogSender.Tbot, "Initializing autoresearch...");
+                timers.Add("AutoResearchTimer", new Timer(AutoResearch, null, Helpers.CalcRandomInterval(IntervalType.AFewSeconds), Helpers.CalcRandomInterval((int)settings.Brain.AutoResearch.CheckIntervalMin, (int)settings.Brain.AutoResearch.CheckIntervalMax)));
+                xSQL.mLog(MethodBase.GetCurrentMethod().Name, (int)LogSender.Tbot, (int)LogType.Info, "AutoResearch Started");
+            }
+            catch (Exception e)
+            {
+                xSQL.mLog(MethodBase.GetCurrentMethod().Name, (int)LogSender.Tbot, (int)LogType.Error, "Exception: " + e.Message);
+            }
         }
 
         private static void StopBrainAutoResearch()
         {
-            Helpers.WriteLog(LogType.Info, LogSender.Tbot, "Stopping autoresearch...");
-            timers.GetValueOrDefault("AutoResearchTimer").Dispose();
-            timers.Remove("AutoResearchTimer");
+            try
+            {
+                Helpers.WriteLog(LogType.Info, LogSender.Tbot, "Stopping autoresearch...");
+                timers.GetValueOrDefault("AutoResearchTimer").Dispose();
+                timers.Remove("AutoResearchTimer");
+                xSQL.mLog(MethodBase.GetCurrentMethod().Name, (int)LogSender.Tbot, (int)LogType.Info, "AutoResearchT Stopped");
+            }
+            catch (Exception e)
+            {
+                xSQL.mLog(MethodBase.GetCurrentMethod().Name, (int)LogSender.Tbot, (int)LogType.Error, "Exception: " + e.Message);
+            }
         }
 
         private static void InitializeExpeditions()
         {
-            Helpers.WriteLog(LogType.Info, LogSender.Tbot, "Initializing expeditions...");
-            timers.Add("ExpeditionsTimer", new Timer(HandleExpeditions, null, Helpers.CalcRandomInterval(IntervalType.SomeSeconds), Helpers.CalcRandomInterval(IntervalType.AboutFiveMinutes)));
+            try
+            {
+                Helpers.WriteLog(LogType.Info, LogSender.Tbot, "Initializing expeditions...");
+                timers.Add("ExpeditionsTimer", new Timer(HandleExpeditions, null, Helpers.CalcRandomInterval(IntervalType.SomeSeconds), Helpers.CalcRandomInterval(IntervalType.AboutFiveMinutes)));
+                xSQL.mLog(MethodBase.GetCurrentMethod().Name, (int)LogSender.Tbot, (int)LogType.Info, "Expeditions Started");
+            }
+            catch (Exception e)
+            {
+                xSQL.mLog(MethodBase.GetCurrentMethod().Name, (int)LogSender.Tbot, (int)LogType.Error, "Exception: " + e.Message);
+            }
         }
 
         private static void StopExpeditions()
         {
-            Helpers.WriteLog(LogType.Info, LogSender.Tbot, "Stopping expeditions...");
-            timers.GetValueOrDefault("ExpeditionsTimer").Dispose();
-            timers.Remove("ExpeditionsTimer");
+            try
+            {
+                Helpers.WriteLog(LogType.Info, LogSender.Tbot, "Stopping expeditions...");
+                timers.GetValueOrDefault("ExpeditionsTimer").Dispose();
+                timers.Remove("ExpeditionsTimer");
+                xSQL.mLog(MethodBase.GetCurrentMethod().Name, (int)LogSender.Tbot, (int)LogType.Info, "Expeditions Stopped");
+            }
+            catch (Exception e)
+            {
+                xSQL.mLog(MethodBase.GetCurrentMethod().Name, (int)LogSender.Tbot, (int)LogType.Error, "Exception: " + e.Message);
+            }
         }
 
         private static void InitializeHarvest()
         {
-            Helpers.WriteLog(LogType.Info, LogSender.Tbot, "Initializing harvest...");
-            timers.Add("HarvestTimer", new Timer(HandleHarvest, null, Helpers.CalcRandomInterval(IntervalType.SomeSeconds), Helpers.CalcRandomInterval(IntervalType.AboutFiveMinutes)));
+            try
+            {
+                Helpers.WriteLog(LogType.Info, LogSender.Tbot, "Initializing harvest...");
+                timers.Add("HarvestTimer", new Timer(HandleHarvest, null, Helpers.CalcRandomInterval(IntervalType.SomeSeconds), Helpers.CalcRandomInterval(IntervalType.AboutFiveMinutes)));
+                xSQL.mLog(MethodBase.GetCurrentMethod().Name, (int)LogSender.Tbot, (int)LogType.Info, "Harvest Started");
+            }
+            catch (Exception e)
+            {
+                xSQL.mLog(MethodBase.GetCurrentMethod().Name, (int)LogSender.Tbot, (int)LogType.Error, "Exception: " + e.Message);
+            }
         }
 
         private static void StopHarvest()
         {
-            Helpers.WriteLog(LogType.Info, LogSender.Tbot, "Stopping harvest...");
-            timers.GetValueOrDefault("HarvestTimer").Dispose();
-            timers.Remove("HarvestTimer");
+            try
+            {
+                Helpers.WriteLog(LogType.Info, LogSender.Tbot, "Stopping harvest...");
+                timers.GetValueOrDefault("HarvestTimer").Dispose();
+                timers.Remove("HarvestTimer");
+                xSQL.mLog(MethodBase.GetCurrentMethod().Name, (int)LogSender.Tbot, (int)LogType.Info, "Harvest Stopped");
+            }
+            catch (Exception e)
+            {
+                xSQL.mLog(MethodBase.GetCurrentMethod().Name, (int)LogSender.Tbot, (int)LogType.Error, "Exception: " + e.Message);
+            }
         }
 
         private static void InitializeSleepMode()
         {
-            Helpers.WriteLog(LogType.Info, LogSender.Tbot, "Initializing sleep mode...");
-            timers.Add("SleepModeTimer", new Timer(HandleSleepMode, null, 0, Helpers.CalcRandomInterval(IntervalType.AboutFiveMinutes)));
+            try
+            {
+                Helpers.WriteLog(LogType.Info, LogSender.Tbot, "Initializing sleep mode...");
+                timers.Add("SleepModeTimer", new Timer(HandleSleepMode, null, 0, Helpers.CalcRandomInterval(IntervalType.AboutFiveMinutes)));
+                xSQL.mLog(MethodBase.GetCurrentMethod().Name, (int)LogSender.Tbot, (int)LogType.Info, "SleepMode Started");
+            }
+            catch (Exception e)
+            {
+                xSQL.mLog(MethodBase.GetCurrentMethod().Name, (int)LogSender.Tbot, (int)LogType.Error, "Exception: " + e.Message);
+            }
         }
 
         private static void StopSleepMode()
         {
-            Helpers.WriteLog(LogType.Info, LogSender.Tbot, "Stopping sleep mode...");
-            timers.GetValueOrDefault("SleepModeTimer").Dispose();
-            timers.Remove("SleepModeTimer");
+            try
+            {
+                Helpers.WriteLog(LogType.Info, LogSender.Tbot, "Stopping sleep mode...");
+                timers.GetValueOrDefault("SleepModeTimer").Dispose();
+                timers.Remove("SleepModeTimer");
+                xSQL.mLog(MethodBase.GetCurrentMethod().Name, (int)LogSender.Tbot, (int)LogType.Info, "SleepMode Stopped");
+            }
+            catch (Exception e)
+            {
+                xSQL.mLog(MethodBase.GetCurrentMethod().Name, (int)LogSender.Tbot, (int)LogType.Error, "Exception: " + e.Message);
+            }
         }
         private static void InitializeFleetScheduler()
         {
-            Helpers.WriteLog(LogType.Info, LogSender.Tbot, "Initializing fleet scheduler...");
-            scheduledFleets = new();
-            timers.Add("FleetSchedulerTimer", new Timer(HandleScheduledFleet, null, Timeout.Infinite, Timeout.Infinite));
+            try
+            {
+                Helpers.WriteLog(LogType.Info, LogSender.Tbot, "Initializing fleet scheduler...");
+                scheduledFleets = new();
+                timers.Add("FleetSchedulerTimer", new Timer(HandleScheduledFleet, null, Timeout.Infinite, Timeout.Infinite));
+                xSQL.mLog(MethodBase.GetCurrentMethod().Name, (int)LogSender.Tbot, (int)LogType.Info, "FleetScheduler Started");
+            }
+            catch (Exception e)
+            {
+                xSQL.mLog(MethodBase.GetCurrentMethod().Name, (int)LogSender.Tbot, (int)LogType.Error, "Exception: " + e.Message);
+            }
         }
 
         private static void StopFleetScheduler()
         {
-            Helpers.WriteLog(LogType.Info, LogSender.Tbot, "Stopping fleet scheduler...");
-            timers.GetValueOrDefault("FleetSchedulerTimer").Dispose();
-            timers.Remove("FleetSchedulerTimer");
+            try
+            {
+                Helpers.WriteLog(LogType.Info, LogSender.Tbot, "Stopping fleet scheduler...");
+                timers.GetValueOrDefault("FleetSchedulerTimer").Dispose();
+                timers.Remove("FleetSchedulerTimer");
+                xSQL.mLog(MethodBase.GetCurrentMethod().Name, (int)LogSender.Tbot, (int)LogType.Info, "FleetScheduler Stopped");
+            }
+            catch (Exception e)
+            {
+                xSQL.mLog(MethodBase.GetCurrentMethod().Name, (int)LogSender.Tbot, (int)LogType.Error, "Exception: " + e.Message);
+            }
         }
 
         private static void AutoFleetSave(Celestial celestial, bool isSleepTimeFleetSave = false, long minDuration = 0, bool forceUnsafe = false)
         {
-            celestial = UpdatePlanet(celestial, UpdateType.Ships);
-            if (celestial.Ships.GetMovableShips().IsEmpty())
+            try
             {
-                Helpers.WriteLog(LogType.Warning, LogSender.FleetScheduler, "Skipping fleetsave from " + celestial.ToString() + " : there is no fleet to save!");
-                return;
-            }
-
-            celestial = UpdatePlanet(celestial, UpdateType.Resources);
-            Celestial destination = new() { ID = 0 };
-            if (!forceUnsafe)
-                forceUnsafe = (bool)settings.SleepMode.AutoFleetSave.ForceUnsafe;
-            bool recall = false;            
-
-            if (celestial.Resources.Deuterium == 0)
-            {
-                Helpers.WriteLog(LogType.Warning, LogSender.FleetScheduler, "Skipping fleetsave from " + celestial.ToString() + " : there is no fuel!");
-                return;
-            }
-            long maxDeuterium = celestial.Resources.Deuterium;
-
-            DateTime departureTime = GetDateTime();
-
-            if (isSleepTimeFleetSave) {
-                if (DateTime.TryParse((string)settings.SleepMode.WakeUp, out DateTime wakeUp))
+                celestial = UpdatePlanet(celestial, UpdateType.Ships);
+                if (celestial.Ships.GetMovableShips().IsEmpty())
                 {
-                    if (departureTime >= wakeUp)
-                        wakeUp = wakeUp.AddDays(1);
-                    minDuration = (long)wakeUp.Subtract(departureTime).TotalSeconds;
-                }
-                else
-                {
-                    Helpers.WriteLog(LogType.Warning, LogSender.FleetScheduler, "Could not plan fleetsave from " + celestial.ToString() + " : unable to parse comeback time");
+                    Helpers.WriteLog(LogType.Warning, LogSender.FleetScheduler, "Skipping fleetsave from " + celestial.ToString() + " : there is no fleet to save!");
+
                     return;
                 }
-            }
-            
-            Missions mission = Missions.Deploy;
-            FleetHypotesis fleetHypotesis = GetFleetSaveDestination(celestials, celestial, departureTime, minDuration, mission, maxDeuterium, forceUnsafe);
-            if ((bool)settings.SleepMode.AutoFleetSave.Recall)
-                recall = true;
-            if ((fleetHypotesis.Origin.Coordinate.Type == Celestials.Moon) || forceUnsafe) {
-                if (fleetHypotesis.Destination.IsSame(new Coordinate(1, 1, 1, Celestials.Planet)) && celestial.Ships.EspionageProbe > 0)
+
+                celestial = UpdatePlanet(celestial, UpdateType.Resources);
+                Celestial destination = new() { ID = 0 };
+                if (!forceUnsafe)
+                    forceUnsafe = (bool)settings.SleepMode.AutoFleetSave.ForceUnsafe;
+                bool recall = false;
+
+                if (celestial.Resources.Deuterium == 0)
                 {
-                    mission = Missions.Spy;
-                    fleetHypotesis = GetFleetSaveDestination(celestials, celestial, departureTime, minDuration, mission, maxDeuterium, forceUnsafe);
+                    Helpers.WriteLog(LogType.Warning, LogSender.FleetScheduler, "Skipping fleetsave from " + celestial.ToString() + " : there is no fuel!");
+                    return;
                 }
-                if (fleetHypotesis.Destination.IsSame(new Coordinate(1, 1, 1, Celestials.Planet)) && celestial.Ships.ColonyShip > 0)
+                long maxDeuterium = celestial.Resources.Deuterium;
+
+                DateTime departureTime = GetDateTime();
+
+                if (isSleepTimeFleetSave)
                 {
-                    mission = Missions.Colonize;
-                    fleetHypotesis = GetFleetSaveDestination(celestials, celestial, departureTime, minDuration, mission, maxDeuterium, forceUnsafe);
+                    if (DateTime.TryParse((string)settings.SleepMode.WakeUp, out DateTime wakeUp))
+                    {
+                        if (departureTime >= wakeUp)
+                            wakeUp = wakeUp.AddDays(1);
+                        minDuration = (long)wakeUp.Subtract(departureTime).TotalSeconds;
+                    }
+                    else
+                    {
+                        Helpers.WriteLog(LogType.Warning, LogSender.FleetScheduler, "Could not plan fleetsave from " + celestial.ToString() + " : unable to parse comeback time");
+                        return;
+                    }
                 }
-                if (fleetHypotesis.Destination.IsSame(new Coordinate(1, 1, 1, Celestials.Planet)) && celestial.Ships.Recycler > 0)
+
+                Missions mission = Missions.Deploy;
+                FleetHypotesis fleetHypotesis = GetFleetSaveDestination(celestials, celestial, departureTime, minDuration, mission, maxDeuterium, forceUnsafe);
+                if ((bool)settings.SleepMode.AutoFleetSave.Recall)
+                    recall = true;
+                if ((fleetHypotesis.Origin.Coordinate.Type == Celestials.Moon) || forceUnsafe)
                 {
-                    mission = Missions.Harvest;
-                    fleetHypotesis = GetFleetSaveDestination(celestials, celestial, departureTime, minDuration, mission, maxDeuterium, forceUnsafe);
-                }                
-            }
-            if (celestial.Resources.Deuterium < fleetHypotesis.Fuel)
-            {
-                Helpers.WriteLog(LogType.Warning, LogSender.FleetScheduler, "Skipping fleetsave from " + celestial.ToString() + " : not enough fuel!");
-                return;
-            }
+                    if (fleetHypotesis.Destination.IsSame(new Coordinate(1, 1, 1, Celestials.Planet)) && celestial.Ships.EspionageProbe > 0)
+                    {
+                        mission = Missions.Spy;
+                        fleetHypotesis = GetFleetSaveDestination(celestials, celestial, departureTime, minDuration, mission, maxDeuterium, forceUnsafe);
+                    }
+                    if (fleetHypotesis.Destination.IsSame(new Coordinate(1, 1, 1, Celestials.Planet)) && celestial.Ships.ColonyShip > 0)
+                    {
+                        mission = Missions.Colonize;
+                        fleetHypotesis = GetFleetSaveDestination(celestials, celestial, departureTime, minDuration, mission, maxDeuterium, forceUnsafe);
+                    }
+                    if (fleetHypotesis.Destination.IsSame(new Coordinate(1, 1, 1, Celestials.Planet)) && celestial.Ships.Recycler > 0)
+                    {
+                        mission = Missions.Harvest;
+                        fleetHypotesis = GetFleetSaveDestination(celestials, celestial, departureTime, minDuration, mission, maxDeuterium, forceUnsafe);
+                    }
+                }
+                if (celestial.Resources.Deuterium < fleetHypotesis.Fuel)
+                {
+                    Helpers.WriteLog(LogType.Warning, LogSender.FleetScheduler, "Skipping fleetsave from " + celestial.ToString() + " : not enough fuel!");
+                    return;
+                }
 
-            var payload = celestial.Resources;
-            if ((long)settings.SleepMode.AutoFleetSave.DeutToLeave > 0)
-                payload.Deuterium -= (long)settings.SleepMode.AutoFleetSave.DeutToLeave;
-            if (payload.Deuterium < 0)
-                payload.Deuterium = 0;
+                var payload = celestial.Resources;
+                if ((long)settings.SleepMode.AutoFleetSave.DeutToLeave > 0)
+                    payload.Deuterium -= (long)settings.SleepMode.AutoFleetSave.DeutToLeave;
+                if (payload.Deuterium < 0)
+                    payload.Deuterium = 0;
 
-            int fleetId = SendFleet(fleetHypotesis.Origin, fleetHypotesis.Ships, fleetHypotesis.Destination, fleetHypotesis.Mission, fleetHypotesis.Speed, payload, userInfo.Class, forceUnsafe);
-            if (recall && fleetId != 0)
-            {
-                Fleet fleet = fleets.Single(fleet => fleet.ID == fleetId);
-                DateTime time = GetDateTime();
-                var interval = ((minDuration / 2) * 1000) + Helpers.CalcRandomInterval(IntervalType.AMinuteOrTwo);
-                if (interval <= 0)
-                    interval = Helpers.CalcRandomInterval(IntervalType.SomeSeconds);
-                DateTime newTime = time.AddMilliseconds(interval);
-                timers.Add("RecallTimer-" + fleetId.ToString(), new Timer(RetireFleet, fleet, interval, Timeout.Infinite));
-                Helpers.WriteLog(LogType.Info, LogSender.FleetScheduler, "The fleet will be recalled at " + newTime.ToString());
-            }
+                int fleetId = SendFleet(fleetHypotesis.Origin, fleetHypotesis.Ships, fleetHypotesis.Destination, fleetHypotesis.Mission, fleetHypotesis.Speed, payload, userInfo.Class, forceUnsafe);
+                if (recall && fleetId != 0)
+                {
+                    Fleet fleet = fleets.Single(fleet => fleet.ID == fleetId);
+                    DateTime time = GetDateTime();
+                    var interval = ((minDuration / 2) * 1000) + Helpers.CalcRandomInterval(IntervalType.AMinuteOrTwo);
+                    if (interval <= 0)
+                        interval = Helpers.CalcRandomInterval(IntervalType.SomeSeconds);
+                    DateTime newTime = time.AddMilliseconds(interval);
+                    timers.Add("RecallTimer-" + fleetId.ToString(), new Timer(RetireFleet, fleet, interval, Timeout.Infinite));
+                    Helpers.WriteLog(LogType.Info, LogSender.FleetScheduler, "The fleet will be recalled at " + newTime.ToString());
+                }
 
-            /*
-            destination = celestials
-                .Where(planet => planet.ID != celestial.ID)
-                .Where(planet => planet.Coordinate.Type == Celestials.Moon)
-                .OrderBy(planet => Helpers.CalcDistance(celestial.Coordinate, planet.Coordinate, serverData))
-                .FirstOrDefault() ?? new() { ID = 0 };
-
-            if (destination.ID == 0 && celestial.Coordinate.Type == Celestials.Moon && celestial.Ships.EspionageProbe > 0)
-            {
-                destination.ID = -99;
-                destination.Coordinate = new(celestial.Coordinate.Galaxy, celestial.Coordinate.System, 16, Celestials.DeepSpace);
-                mission = Missions.Spy;
-            }
-
-            if ((bool)settings.SleepMode.AutoFleetSave.ForceUnsafe)
+                /*
                 destination = celestials
                     .Where(planet => planet.ID != celestial.ID)
+                    .Where(planet => planet.Coordinate.Type == Celestials.Moon)
                     .OrderBy(planet => Helpers.CalcDistance(celestial.Coordinate, planet.Coordinate, serverData))
                     .FirstOrDefault() ?? new() { ID = 0 };
 
-            if (destination.ID == 0)
-            {
-                Helpers.WriteLog(LogType.Warning, LogSender.FleetScheduler, "Could not plan fleetsave from " + celestial.ToString() +" : no safe destination exists");
-            }
-            else
-            {
-                decimal speed;
-                if (isSleepTimeFleetSave && DateTime.TryParse((string)settings.SleepMode.WakeUp, out DateTime wakeUp))
+                if (destination.ID == 0 && celestial.Coordinate.Type == Celestials.Moon && celestial.Ships.EspionageProbe > 0)
                 {
-                    speed = Speeds.HundredPercent;
-                    long flightTime = (long)Math.Round(ogamedService.PredictFleet(celestial, celestial.Ships, destination.Coordinate, mission, speed).Time * 9.93, 0, MidpointRounding.ToPositiveInfinity);
-                    if (departureTime >= wakeUp)
-                        wakeUp = wakeUp.AddDays(1);
-                    long minFlightTime = (long)wakeUp.Subtract(departureTime).TotalSeconds;
-                    if (mission != Missions.Deploy)
-                        flightTime *= 2;
+                    destination.ID = -99;
+                    destination.Coordinate = new(celestial.Coordinate.Galaxy, celestial.Coordinate.System, 16, Celestials.DeepSpace);
+                    mission = Missions.Spy;
+                }
 
-                    while (flightTime < minFlightTime && ( (userInfo.Class != Classes.General && speed > 1) || (userInfo.Class == Classes.General && speed > (decimal)0.5) ) )
-                    {
-                        if (userInfo.Class == Classes.General)
-                            speed -= (decimal)0.5;
-                        else
-                            speed -= 1;
-                        flightTime = (long)Math.Round(ogamedService.PredictFleet(celestial, celestial.Ships, destination.Coordinate, mission, speed).Time * 9.93, 0, MidpointRounding.ToPositiveInfinity);
-                    }
+                if ((bool)settings.SleepMode.AutoFleetSave.ForceUnsafe)
+                    destination = celestials
+                        .Where(planet => planet.ID != celestial.ID)
+                        .OrderBy(planet => Helpers.CalcDistance(celestial.Coordinate, planet.Coordinate, serverData))
+                        .FirstOrDefault() ?? new() { ID = 0 };
+
+                if (destination.ID == 0)
+                {
+                    Helpers.WriteLog(LogType.Warning, LogSender.FleetScheduler, "Could not plan fleetsave from " + celestial.ToString() +" : no safe destination exists");
                 }
                 else
                 {
-                    if (userInfo.Class == Classes.General)
-                        speed = Speeds.FivePercent;
-                    else
-                        speed = Speeds.TenPercent;
+                    decimal speed;
+                    if (isSleepTimeFleetSave && DateTime.TryParse((string)settings.SleepMode.WakeUp, out DateTime wakeUp))
+                    {
+                        speed = Speeds.HundredPercent;
+                        long flightTime = (long)Math.Round(ogamedService.PredictFleet(celestial, celestial.Ships, destination.Coordinate, mission, speed).Time * 9.93, 0, MidpointRounding.ToPositiveInfinity);
+                        if (departureTime >= wakeUp)
+                            wakeUp = wakeUp.AddDays(1);
+                        long minFlightTime = (long)wakeUp.Subtract(departureTime).TotalSeconds;
+                        if (mission != Missions.Deploy)
+                            flightTime *= 2;
 
+                        while (flightTime < minFlightTime && ( (userInfo.Class != Classes.General && speed > 1) || (userInfo.Class == Classes.General && speed > (decimal)0.5) ) )
+                        {
+                            if (userInfo.Class == Classes.General)
+                                speed -= (decimal)0.5;
+                            else
+                                speed -= 1;
+                            flightTime = (long)Math.Round(ogamedService.PredictFleet(celestial, celestial.Ships, destination.Coordinate, mission, speed).Time * 9.93, 0, MidpointRounding.ToPositiveInfinity);
+                        }
+                    }
+                    else
+                    {
+                        if (userInfo.Class == Classes.General)
+                            speed = Speeds.FivePercent;
+                        else
+                            speed = Speeds.TenPercent;
+
+                    }
+                    SendFleet(celestial, celestial.Ships, destination.Coordinate, mission, speed, celestial.Resources, userInfo.Class, true);
                 }
-                SendFleet(celestial, celestial.Ships, destination.Coordinate, mission, speed, celestial.Resources, userInfo.Class, true);
+                */
             }
-            */
+            catch (Exception e)
+            {
+                xSQL.mLog(MethodBase.GetCurrentMethod().Name, (int)LogSender.Tbot, (int)LogType.Error, "Exception: " + e.Message);
+            }
         }
 
         private static FleetHypotesis GetFleetSaveDestination(List<Celestial> source, Celestial origin, DateTime departureDate, long minFlightTime, Missions mission, long maxFuel, bool forceUnsafe = false)
@@ -1249,6 +1448,7 @@ namespace Tbot
                     if (tempFleets.Count > 0)
                     {
                         Helpers.WriteLog(LogType.Info, LogSender.SleepMode, "There are fleets that would come back during sleep time. Delaying sleep mode.");
+                        xSQL.mLog(MethodBase.GetCurrentMethod().Name, (int)Feature.SleepMode, (int)enLogI2.Event, "There are fleets that would come back during sleep time. Delaying sleep mode.");
                         long interval = 0;
                         foreach(Fleet tempFleet in tempFleets)
                         {
@@ -1290,7 +1490,17 @@ namespace Tbot
                         if ((bool)settings.SleepMode.AutoFleetSave.OnlyMoons)
                             celestialsToFleetsave = celestialsToFleetsave.Where(c => c.Coordinate.Type == Celestials.Moon).ToList();
                         foreach (Celestial celestial in celestialsToFleetsave)
-                            AutoFleetSave(celestial, true);
+                        {
+                            try
+                            {
+                                AutoFleetSave(celestial, true);
+                            }
+                            catch (Exception e)
+                            {
+                                xSQL.mLog(MethodBase.GetCurrentMethod().Name, (int)LogSender.SleepMode, (int)LogType.Error, "Exception: " + e.Message);
+                            }
+
+                        }
                     }
 
                     if ((bool)settings.TelegramMessenger.Active && (bool)settings.SleepMode.TelegramMessenger.Active)
@@ -1550,31 +1760,62 @@ namespace Tbot
             {
                 if (!isSleeping)
                 {
-                    Planet celestial = celestials
-                        .Single(c => c.HasCoords(new(
-                            (int)settings.Brain.AutoResearch.Target.Galaxy,
-                            (int)settings.Brain.AutoResearch.Target.System,
-                            (int)settings.Brain.AutoResearch.Target.Position,
-                            Celestials.Planet
-                            )
-                        )) as Planet;
-                    var time = GetDateTime();
-                    celestial = UpdatePlanet(celestial, UpdateType.Constructions) as Planet;
-                    long interval;
-                    if (celestial.Constructions.ResearchCountdown != 0)
-                        interval = (celestial.Constructions.ResearchCountdown * 1000) + Helpers.CalcRandomInterval(IntervalType.SomeSeconds);
-                    else if (fleetId != 0)
+                    Planet celestial = null;
+                    
+                    try
                     {
-                        fleets = UpdateFleets();
-                        var fleet = fleets.Single(f => f.ID == fleetId);
-                        interval = (fleet.ArriveIn * 1000) + Helpers.CalcRandomInterval(IntervalType.SomeSeconds);
+                        celestial = celestials
+                            .Single(c => c.HasCoords(new(
+                                (int)settings.Brain.AutoResearch.Target.Galaxy,
+                                (int)settings.Brain.AutoResearch.Target.System,
+                                (int)settings.Brain.AutoResearch.Target.Position,
+                                Celestials.Planet
+                                )
+                            )) as Planet;
                     }
-                    else if (celestial.Constructions.BuildingID == (int)Buildables.ResearchLab)
-                        interval = (celestial.Constructions.BuildingCountdown * 1000) + Helpers.CalcRandomInterval(IntervalType.SomeSeconds);
-                    else
-                        interval = Helpers.CalcRandomInterval((int)settings.Brain.AutoResearch.CheckIntervalMin, (int)settings.Brain.AutoResearch.CheckIntervalMax);
-                    if (interval <= 0)
+                    catch(Exception ex)
+                    {
+
+                    }
+                    
+                    var time = GetDateTime();
+                    long interval;
+
+                    /* Stewie 24/09/2021
+                     * 
+                     * It's possible that the configuration file
+                     * isn't correctly filled and coordinate
+                     * for the autoresearch aren't correct.
+                     * 
+                     * If the planet doesn't exist
+                     * the finally branch doesn't go in exception
+                     * and tbot continue to run instead of crashing
+                     */
+
+                    if (celestial == null)
+                    {
                         interval = Helpers.CalcRandomInterval(IntervalType.SomeSeconds);
+
+                    }
+                    else
+                    {
+                        celestial = UpdatePlanet(celestial, UpdateType.Constructions) as Planet;
+                        if (celestial.Constructions.ResearchCountdown != 0)
+                            interval = (celestial.Constructions.ResearchCountdown * 1000) + Helpers.CalcRandomInterval(IntervalType.SomeSeconds);
+                        else if (fleetId != 0)
+                        {
+                            fleets = UpdateFleets();
+                            var fleet = fleets.Single(f => f.ID == fleetId);
+                            interval = (fleet.ArriveIn * 1000) + Helpers.CalcRandomInterval(IntervalType.SomeSeconds);
+                        }
+                        else if (celestial.Constructions.BuildingID == (int)Buildables.ResearchLab)
+                            interval = (celestial.Constructions.BuildingCountdown * 1000) + Helpers.CalcRandomInterval(IntervalType.SomeSeconds);
+                        else
+                            interval = Helpers.CalcRandomInterval((int)settings.Brain.AutoResearch.CheckIntervalMin, (int)settings.Brain.AutoResearch.CheckIntervalMax);
+                        if (interval <= 0)
+                            interval = Helpers.CalcRandomInterval(IntervalType.SomeSeconds);
+                    }
+
                     var newTime = time.AddMilliseconds(interval);
                     timers.GetValueOrDefault("AutoResearchTimer").Change(interval, Timeout.Infinite);
                     Helpers.WriteLog(LogType.Info, LogSender.Brain, "Next AutoResearch check at " + newTime.ToString());
@@ -2602,7 +2843,14 @@ namespace Tbot
             if ((bool)settings.Defender.Autofleet.Active)
             {
                 var minFlightTime = attack.ArriveIn + (attack.ArriveIn / 100 * 30) + (Helpers.CalcRandomInterval(IntervalType.SomeSeconds) / 1000);
-                AutoFleetSave(attackedCelestial, false, minFlightTime, true);
+                try
+                {
+                    AutoFleetSave(attackedCelestial, false, minFlightTime, true);
+                }
+                catch (Exception e)
+                {
+                    xSQL.mLog(MethodBase.GetCurrentMethod().Name, (int)LogSender.Defender, (int)LogType.Error, "Exception: " + e.Message);
+                }
                 /*
                 slots = UpdateSlots();
                 if (slots.Free > 0)
