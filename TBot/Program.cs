@@ -194,8 +194,9 @@ namespace Tbot
                     Helpers.WriteLog(LogType.Info, LogSender.Tbot, "Initializing data...");
                     celestials = GetPlanets();
                     researches = ogamedService.GetResearches();
+                    celestials = UpdatePlanets(UpdateType.Buildings);
                     scheduledFleets = new();
-                    xSQL.mUpdateCelestials(celestials[0]);
+                    xSQL.mUpdateSingleCelestials(celestials[0]);
                     Helpers.WriteLog(LogType.Info, LogSender.Tbot, "Initializing features...");
                     InitializeFeatures();
                 }

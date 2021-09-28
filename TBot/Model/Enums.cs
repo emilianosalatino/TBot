@@ -247,4 +247,17 @@ namespace Tbot.Model
 		DoNothing = -2
 	}
 
+	public enum enBuildings
+	{
+		MetalMine = 1,
+		CrystalMine = 2,
+		DeuteriumSynthesizer = 3,
+		SolarPlant = 4,
+		FusionReactor = 5,
+		SolarSatellite = 6,
+		MetalStorage = 7,
+		CrystalStorage = 8,
+		DeuteriumTank = 9
+	}
+
 }

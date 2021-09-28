@@ -111,21 +111,12 @@ namespace Tbot
             }
         }
 
-        public enExitFunction mUpdateCelestials(Celestial xCelestial)
+        public enExitFunction mUpdateSingleCelestials(Celestial xCelestial)
         {
             try
             {
-                string sSQL = @"INSERT INTO tbCelestial (ID,Img,Name,Diameter,Activity)
-                              VALUES(@pId, @sImg, @sName, @nDiameter, @nActivity)
-                              ON CONFLICT(ID) DO UPDATE SET Img = @sImg, Name = @sName, Diameter = @nDiameter, Activity = @nActivity WHERE ID = @pId ";
-                SQLiteCommand xLocCommand = new SQLiteCommand(sSQL, xDbMasterConnection);
-
-                xLocCommand.Parameters.AddWithValue("@pId", xCelestial.ID);
-                xLocCommand.Parameters.AddWithValue("@sImg", xCelestial.Img);
-                xLocCommand.Parameters.AddWithValue("@sName", xCelestial.Name);
-                xLocCommand.Parameters.AddWithValue("@nDiameter", xCelestial.Diameter);
-                xLocCommand.Parameters.AddWithValue("@nActivity", xCelestial.Activity);
-                xLocCommand.ExecuteNonQuery();
+                mUpdateTbCelestial(xCelestial);
+                mUpdateTbCelestialBuildings(xCelestial);
 
                 return enExitFunction.kOk;
             }
@@ -135,6 +126,9 @@ namespace Tbot
                 return enExitFunction.kKo;
             }
         }
+        
+        
+        
 
         /******************************************END PUBLIC METHOD ********************************/
 
@@ -1218,15 +1212,147 @@ PRAGMA foreign_keys = on;
                 return enExitFunction.kKo;
             }
         }
+        /*Lorenzo 28/09/2021
+         * 
+         * Method that allow to insert or update all the resources building 
+         * of a single celestial
+         * 
+         * 
+         * PARAMETER IN: 
+         * 
+         *  - Celestial xCelestial: the celestial struct of the planet that you want to update
+         *  
+         *  
+         *  PARAMETER OUT:
+         *  
+         *  - enExitFunction: enum that could return kOk if the method success, kKo if the method went in exception
+         */
+        private enExitFunction mUpdateTbCelestialBuildings(Celestial xCelestial)
+        {
+            try
+            {
+
+                mUpdateSingleTbCelestialBuilding(xCelestial.ID, enBuildings.MetalMine, xCelestial.Buildings.MetalMine);
+                mUpdateSingleTbCelestialBuilding(xCelestial.ID, enBuildings.CrystalMine, xCelestial.Buildings.CrystalMine);
+                mUpdateSingleTbCelestialBuilding(xCelestial.ID, enBuildings.DeuteriumSynthesizer, xCelestial.Buildings.DeuteriumSynthesizer);
+                mUpdateSingleTbCelestialBuilding(xCelestial.ID, enBuildings.SolarPlant, xCelestial.Buildings.SolarPlant);
+                mUpdateSingleTbCelestialBuilding(xCelestial.ID, enBuildings.FusionReactor, xCelestial.Buildings.FusionReactor);
+                mUpdateSingleTbCelestialBuilding(xCelestial.ID, enBuildings.SolarSatellite, xCelestial.Buildings.SolarSatellite);
+                mUpdateSingleTbCelestialBuilding(xCelestial.ID, enBuildings.MetalStorage, xCelestial.Buildings.MetalStorage);
+                mUpdateSingleTbCelestialBuilding(xCelestial.ID, enBuildings.CrystalStorage, xCelestial.Buildings.CrystalStorage);
+                mUpdateSingleTbCelestialBuilding(xCelestial.ID, enBuildings.DeuteriumTank, xCelestial.Buildings.DeuteriumTank);
+
+                return enExitFunction.kOk;
+                /*foreach (enBuildings xBuilding in (enBuildings[])Enum.GetValues(typeof(enBuildings)))
+                {
+                    mUpdateSingleTbCelestialBuilding(xCelestial.ID, xBuilding, )
+                }*/
+            }
+            catch (Exception ex)
+            {
+                mLog(MethodBase.GetCurrentMethod().Name, (int)LogSender.Tbot, (int)LogType.Error, "Exception: " + ex.Message);
+                return enExitFunction.kKo;
+            }
+        }
+        /*Lorenzo 28/09/2021
+         * 
+         * Method that allow to insert or update a single resources building 
+         * of a single celestial
+         * 
+         * 
+         * PARAMETER IN: 
+         * 
+         *  - int pIdCelestial: integer that represent the id of the celestial to update
+         *  - enBuildings xBuilding: integer that represent the building to update --> Refer to enBuildings
+         *  - int nLevel: integer that represent the level of the building
+         *  
+         *  
+         *  PARAMETER OUT:
+         *  
+         *  - enExitFunction: enum that could return kOk if the method success, kKo if the method went in exception
+         */
+        private enExitFunction mUpdateSingleTbCelestialBuilding(int pIdCelestial, enBuildings xBuilding, int nLevel)
+        {
+            try
+            {
+                //This SQLite query try to insert into tbCelestialBuildings the record 
+                //with values specified in the 2 row. pIdCelestial and pIdBuilding are a composed primary key, so 
+                //if the insert statement throw an exception caused by a
+                //duplicated primary key (ON CONFLICT(pIdCelestial,pIdBuilding)) it will be executed
+                //the second part of the query (UPDATE) and the record will be updated
+                string sSQL = @"INSERT INTO tbCelestialBuildings (pIdCelestial,pIdBuilding,nLevel)
+                              VALUES(@pIdCelestial, @pIdBuilding, @nLevel)
+                              ON CONFLICT(pIdCelestial,pIdBuilding) DO UPDATE SET nLevel = @nLevel WHERE pIdCelestial = @pIdCelestial AND pIdBuilding = @pIdBuilding ";
+
+                //Creating a command with sSQL as commandText and xDbMasterConnection as SQLiteConnection
+                SQLiteCommand xLocCommand = new SQLiteCommand(sSQL, xDbMasterConnection);
+
+                //Set the query parameters
+                xLocCommand.Parameters.AddWithValue("@pIdCelestial", pIdCelestial);
+                xLocCommand.Parameters.AddWithValue("@pIdBuilding", (int)xBuilding);
+                xLocCommand.Parameters.AddWithValue("@nLevel", nLevel);
+
+                //Execute the query
+                xLocCommand.ExecuteNonQuery();
+
+                return enExitFunction.kOk;
+            }
+            catch (Exception ex)
+            {
+                mLog(MethodBase.GetCurrentMethod().Name, (int)LogSender.Tbot, (int)LogType.Error, "Exception: " + ex.Message);
+                return enExitFunction.kKo;
+            }
+        }
+        /*Lorenzo 28/09/2021
+         * 
+         * Method that allow to insert or update the table tbCelestial for a single celestial
+         * 
+         * 
+         * PARAMETER IN: 
+         * 
+         *  - Celestial xCelestial: the celestial struct of the planet that you want to update
+         *  
+         *  
+         *  PARAMETER OUT:
+         *  
+         *  - enExitFunction: enum that could return kOk if the method success, kKo if the method went in exception
+         */
+        private enExitFunction mUpdateTbCelestial(Celestial xCelestial)
+        {
+            try
+            {
+                //This SQLite query try to insert into tbCelestial the record 
+                //with values specified in the 2 row. ID is a primary key, so 
+                //if the insert statement throw an exception caused by a
+                //duplicated primary key (ON CONFLICT(ID)) it will be executed
+                //the second part of the query (UPDATE) and the record will be updated
+                string sSQL = @"INSERT INTO tbCelestial (ID,Img,Name,Diameter,Activity)
+                              VALUES(@pId, @sImg, @sName, @nDiameter, @nActivity)
+                              ON CONFLICT(ID) DO UPDATE SET Img = @sImg, Name = @sName, Diameter = @nDiameter, Activity = @nActivity WHERE ID = @pId ";
+
+                //Creating a command with sSQL as commandText and xDbMasterConnection as SQLiteConnection
+                SQLiteCommand xLocCommand = new SQLiteCommand(sSQL, xDbMasterConnection);
+
+                //Set the query parameters
+                xLocCommand.Parameters.AddWithValue("@pId", xCelestial.ID);
+                xLocCommand.Parameters.AddWithValue("@sImg", xCelestial.Img);
+                xLocCommand.Parameters.AddWithValue("@sName", xCelestial.Name);
+                xLocCommand.Parameters.AddWithValue("@nDiameter", xCelestial.Diameter);
+                xLocCommand.Parameters.AddWithValue("@nActivity", xCelestial.Activity);
+
+                //Execute the query
+                xLocCommand.ExecuteNonQuery();
+
+                return enExitFunction.kOk;
+            }
+            catch (Exception ex)
+            {
+                mLog(MethodBase.GetCurrentMethod().Name, (int)LogSender.Tbot, (int)LogType.Error, "Exception: " + ex.Message);
+                return enExitFunction.kKo;
+            }
+        }
 
         /******************************************END PRIVATE METHOD ********************************/
 
     }
-
-    /*****************START ENUM******************/
-
-
-
-
-    /*****************END ENUM******************/
 }
