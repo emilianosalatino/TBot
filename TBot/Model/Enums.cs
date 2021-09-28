@@ -240,7 +240,7 @@ namespace Tbot.Model
 
 	/*Stewie 24/09/2021*/
 	/*enum used by method of clSQL class to return a value*/
-	public enum enEsitoFunzione
+	public enum enExitFunction
 	{
 		kOk = 0,
 		kKo = -1,

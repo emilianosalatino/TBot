@@ -195,7 +195,7 @@ namespace Tbot
                     celestials = GetPlanets();
                     researches = ogamedService.GetResearches();
                     scheduledFleets = new();
-
+                    xSQL.mUpdateCelestials(celestials[0]);
                     Helpers.WriteLog(LogType.Info, LogSender.Tbot, "Initializing features...");
                     InitializeFeatures();
                 }
@@ -1448,7 +1448,7 @@ namespace Tbot
                     if (tempFleets.Count > 0)
                     {
                         Helpers.WriteLog(LogType.Info, LogSender.SleepMode, "There are fleets that would come back during sleep time. Delaying sleep mode.");
-                        xSQL.mLog(MethodBase.GetCurrentMethod().Name, (int)Feature.SleepMode, (int)enLogI2.Event, "There are fleets that would come back during sleep time. Delaying sleep mode.");
+                        //xSQL.mLog(MethodBase.GetCurrentMethod().Name, (int)Feature.SleepMode, (int)enLogI2.Event, "There are fleets that would come back during sleep time. Delaying sleep mode.");
                         long interval = 0;
                         foreach(Fleet tempFleet in tempFleets)
                         {
