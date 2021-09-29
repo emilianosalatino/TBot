@@ -220,7 +220,8 @@ namespace Tbot.Model
 		Expeditions,
 		Harvest,
 		FleetScheduler,
-		SleepMode
+		SleepMode,
+		Database
 	}
 
 	public enum Feature
@@ -231,11 +232,12 @@ namespace Tbot.Model
 		BrainAutoRepatriate = 3,
 		BrainAutoMine = 4,
 		BrainOfferOfTheDay = 5,
-		BrainAutoResearch = 10,
 		Expeditions = 6,
 		Harvest = 7,
 		FleetScheduler = 8,
-		SleepMode = 9
+		SleepMode = 9,
+		BrainAutoResearch = 10,
+		Database = 11
 	}
 
 	/*Stewie 24/09/2021*/

@@ -177,6 +177,7 @@ namespace Tbot
                     xaSem[Feature.Harvest] = new Semaphore(1, 1); //Harvest
                     xaSem[Feature.FleetScheduler] = new Semaphore(1, 1); //FleetScheduler
                     xaSem[Feature.SleepMode] = new Semaphore(1, 1); //SleepMode
+                    xaSem[Feature.Database] = new Semaphore(1, 1); //Database
 
                     features = new();
                     features.AddOrUpdate(Feature.Defender, false, HandleStartStopFeatures);
@@ -190,6 +191,7 @@ namespace Tbot
                     features.AddOrUpdate(Feature.Harvest, false, HandleStartStopFeatures);
                     features.AddOrUpdate(Feature.FleetScheduler, false, HandleStartStopFeatures);
                     features.AddOrUpdate(Feature.SleepMode, false, HandleStartStopFeatures);
+                    features.AddOrUpdate(Feature.Database, false, HandleStartStopFeatures);
 
                     Helpers.WriteLog(LogType.Info, LogSender.Tbot, "Initializing data...");
                     celestials = GetPlanets();
@@ -259,6 +261,10 @@ namespace Tbot
                         if (!currentValue)
                             InitializeSleepMode();
                         return true;
+                    case Feature.Database:
+                        if (currentValue)
+                            StopDatabase();
+                        return false;
                     default:
                         return false;
                 }
@@ -396,6 +402,19 @@ namespace Tbot
                     {
                         if (currentValue)
                             StopSleepMode();
+                        return false;
+                    }
+                case Feature.Database:
+                    if (true)
+                    {
+                        if (!currentValue)
+                            InitializeDatabase();
+                        return true;
+                    }
+                    else
+                    {
+                        if (currentValue)
+                            StopDatabase();
                         return false;
                     }
                 default:
@@ -642,6 +661,35 @@ namespace Tbot
                     title = "ENEMY ACTIVITY! - " + title;
 
                 Helpers.SetTitle(title);
+            }
+            catch (Exception e)
+            {
+                xSQL.mLog(MethodBase.GetCurrentMethod().Name, (int)LogSender.Tbot, (int)LogType.Error, "Exception: " + e.Message);
+            }
+        }
+
+        private static void InitializeDatabase()
+        {
+            try
+            {
+                Helpers.WriteLog(LogType.Info, LogSender.Tbot, "Initializing database...");
+                timers.Add("DatabaseTimer", new Timer(HandleDatabase, null, Helpers.CalcRandomInterval(IntervalType.AFewSeconds), Helpers.CalcRandomInterval((int)settings.Defender.CheckIntervalMin, (int)settings.Defender.CheckIntervalMax)));
+                xSQL.mLog(MethodBase.GetCurrentMethod().Name, (int)LogSender.Tbot, (int)LogType.Info, "Database Started");
+            }
+            catch (Exception e)
+            {
+                xSQL.mLog(MethodBase.GetCurrentMethod().Name, (int)LogSender.Tbot, (int)LogType.Error, "Exception: " + e.Message);
+            }
+        }
+
+        private static void StopDatabase()
+        {
+            try
+            {
+                Helpers.WriteLog(LogType.Info, LogSender.Tbot, "Stopping database...");
+                timers.GetValueOrDefault("DatabaseTimer").Dispose();
+                timers.Remove("DatabaseTimer");
+                xSQL.mLog(MethodBase.GetCurrentMethod().Name, (int)LogSender.Tbot, (int)LogType.Info, "Defender Stopped");
             }
             catch (Exception e)
             {
@@ -1267,6 +1315,7 @@ namespace Tbot
                 xaSem[Feature.Expeditions].WaitOne();
                 xaSem[Feature.Harvest].WaitOne();
                 xaSem[Feature.SleepMode].WaitOne();
+                xaSem[Feature.Database].WaitOne();
 
                 DateTime time = GetDateTime();
 
@@ -1418,6 +1467,7 @@ namespace Tbot
                 xaSem[Feature.Expeditions].Release();
                 xaSem[Feature.Harvest].Release();
                 xaSem[Feature.SleepMode].Release();
+                xaSem[Feature.Database].Release();
             }
         }
 
@@ -1552,7 +1602,61 @@ namespace Tbot
                 UpdateTitle();
             }
         }
+        /*Lorenzo 29/09/2021
+         * 
+         * Method to manage data on database and eventually update data on db
+         */
+        private static void HandleDatabase(object state)
+        {
+            try
+            {
+                // Wait for the thread semaphore
+                // to avoid the concurrency with itself
+                xaSem[Feature.Database].WaitOne();
+                Helpers.WriteLog(LogType.Info, LogSender.Database, "Checking database...");
 
+                if (isSleeping)
+                {
+                    Helpers.WriteLog(LogType.Info, LogSender.Defender, "Skipping: Sleep Mode Active!");
+                    xaSem[Feature.Database].Release();
+                    return;
+                }
+
+                if(xSQL == null)
+                {
+                    Helpers.WriteLog(LogType.Error, LogSender.Database, "clSQL is null!!!");
+                }
+
+
+                
+
+                DateTime time = GetDateTime();
+                int interval = Helpers.CalcRandomInterval((int)settings.Defender.CheckIntervalMin, (int)settings.Defender.CheckIntervalMax);
+                if (interval <= 0)
+                    interval = Helpers.CalcRandomInterval(IntervalType.SomeSeconds);
+                DateTime newTime = time.AddMilliseconds(interval);
+                timers.GetValueOrDefault("DatabaseTimer").Change(interval, Timeout.Infinite);
+                Helpers.WriteLog(LogType.Info, LogSender.Database, "Next check at " + newTime.ToString());
+                UpdateTitle();
+            }
+            catch (Exception e)
+            {
+                Helpers.WriteLog(LogType.Warning, LogSender.Database, "An error has occurred while checking for attacks: " + e.Message);
+                Helpers.WriteLog(LogType.Warning, LogSender.Database, "Stacktrace: " + e.StackTrace);
+                DateTime time = GetDateTime();
+                int interval = Helpers.CalcRandomInterval(IntervalType.AFewSeconds);
+                DateTime newTime = time.AddMilliseconds(interval);
+                timers.GetValueOrDefault("DatabaseTimer").Change(interval, Timeout.Infinite);
+                Helpers.WriteLog(LogType.Info, LogSender.Database, "Next check at " + newTime.ToString());
+                UpdateTitle();
+            }
+            finally
+            {
+                //Release its semaphore
+                if (!isSleeping)
+                    xaSem[Feature.Database].Release();
+            }
+        }
         private static void Defender(object state)
         {
             try

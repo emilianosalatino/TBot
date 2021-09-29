@@ -6,6 +6,8 @@ using System.Threading.Tasks;
 using System.Data.SQLite;
 using Tbot.Model;
 using System.Reflection;
+using System.Data;
+using System.Data.Common;
 
 namespace Tbot
 {
@@ -127,7 +129,59 @@ namespace Tbot
             }
         }
         
-        
+        public enExitFunction mGetCelestials(out List<Celestial> xaCelestial)
+        {
+            //TODO IMPLEMENTARE
+            xaCelestial = null;
+            return enExitFunction.kOk;
+            SQLiteDataReader xLocReader = null;
+            try
+            {
+                //    string sSQL = @"SELECT * FROM vCelestial";
+                //    SQLiteCommand xLocCommand = new SQLiteCommand(sSQL, xDbMasterConnection);
+                //    xLocReader = xLocCommand.ExecuteReader();
+                //    if(xLocReader.HasRows == false)
+                //    {
+                //        xaCelestial = null;
+                //        xLocReader.Close();
+                //        return enExitFunction.DoNothing;
+                //    }
+
+                //    DataTable dtCelestial = new DataTable();
+                //    SQLiteDataAdapter xDataAdapter = new SQLiteDataAdapter(xLocCommand);
+
+                //    xDataAdapter.Fill(dtCelestial);
+                //    xLocReader.Close();
+                //    if(dtCelestial.Rows.Count <= 0)
+                //    {
+                //        xaCelestial = null;
+                //        return enExitFunction.DoNothing;
+                //    }
+                //    Celestial xCelestial;
+                //    foreach(DataRow xRow in dtCelestial.Rows)
+                //    {
+                //        xCelestial = new Celestial();
+                //        xCelestial.Name = xRow["Name"].ToString();
+                //        xCelestial.Img = xRow["Img"].ToString();
+                //        xCelestial.Diameter = Convert.ToInt32(xRow["Diameter"].ToString());
+                //        xCelestial.Buildings.CrystalMine = Convert.ToInt32(xRow[""])
+
+                //        xaCelestial.Add(xCelestial);
+                //    }
+
+                //    return enExitFunction.kOk;
+            }
+            catch(Exception ex)
+            {
+                mLog(MethodBase.GetCurrentMethod().Name, (int)LogSender.Tbot, (int)LogType.Error, "Exception: " + ex.Message);
+                xaCelestial = null;
+                return enExitFunction.kKo;
+            }
+            finally
+            {
+                mCloseReader(ref xLocReader);
+            }
+        }
         
 
         /******************************************END PUBLIC METHOD ********************************/
@@ -135,6 +189,24 @@ namespace Tbot
 
 
         /******************************************START PRIVATE METHOD ********************************/
+
+        private enExitFunction mCloseReader(ref SQLiteDataReader xLocReader)
+        {
+            try
+            {
+                if(xLocReader != null)
+                {
+                    if (xLocReader.IsClosed == false)
+                        xLocReader.Close();
+                }
+
+                return enExitFunction.kOk;
+            }
+            catch(Exception ex)
+            {
+                return enExitFunction.kKo;
+            }
+        }
         /*Lorenzo 28/09/2021
          * 
          * Create the structure of the master database dbBot
@@ -154,7 +226,7 @@ namespace Tbot
 
 
                 string sSQL = @"--
--- File generated with SQLiteStudio v3.2.1 on mar set 28 21:38:15 2021
+-- File generated with SQLiteStudio v3.2.1 on mer set 29 20:54:09 2021
 --
 -- Text encoding used: System
 --
@@ -327,25 +399,135 @@ INSERT INTO tbCelestial (
                             12
                         );
 
+INSERT INTO tbCelestial (
+                            ID,
+                            Img,
+                            Name,
+                            Diameter,
+                            Activity
+                        )
+                        VALUES (
+                            33621834,
+                            'https://gf2.geo.gfsrv.net/cdna7/1121347d31ef5d450c3b8751b15b64.png',
+                            'Pdor figlio di Kmer',
+                            12800,
+                            0
+                        );
+
 
 -- Table: tbCelestialBuildings
 DROP TABLE IF EXISTS tbCelestialBuildings;
 
 CREATE TABLE tbCelestialBuildings (
-    pIdCelestialBuilding INTEGER PRIMARY KEY AUTOINCREMENT
-                                 NOT NULL,
-    pIdCelestial         INTEGER REFERENCES tbCelestial (ID),
-    pIdBuilding          INTEGER,
-    nLevel               INTEGER,
-    FOREIGN KEY (
-        pIdCelestialBuilding
+    pIdCelestial [INT] NOT NULL
+                       REFERENCES tbCelestial (ID),
+    pIdBuilding  [INT] NOT NULL
+                       REFERENCES tbBuildings (pIdBuilding),
+    nLevel       [INT],
+    CONSTRAINT PK_tbCelestialBuildings_1 PRIMARY KEY (
+        pIdCelestial ASC,
+        pIdBuilding ASC
     )
-    REFERENCES tbCelestial (ID),
-    FOREIGN KEY (
-        pIdBuilding
-    )
-    REFERENCES tbBuildings (pIdBuilding) 
 );
+
+INSERT INTO tbCelestialBuildings (
+                                     pIdCelestial,
+                                     pIdBuilding,
+                                     nLevel
+                                 )
+                                 VALUES (
+                                     33621834,
+                                     1,
+                                     28
+                                 );
+
+INSERT INTO tbCelestialBuildings (
+                                     pIdCelestial,
+                                     pIdBuilding,
+                                     nLevel
+                                 )
+                                 VALUES (
+                                     33621834,
+                                     2,
+                                     23
+                                 );
+
+INSERT INTO tbCelestialBuildings (
+                                     pIdCelestial,
+                                     pIdBuilding,
+                                     nLevel
+                                 )
+                                 VALUES (
+                                     33621834,
+                                     3,
+                                     24
+                                 );
+
+INSERT INTO tbCelestialBuildings (
+                                     pIdCelestial,
+                                     pIdBuilding,
+                                     nLevel
+                                 )
+                                 VALUES (
+                                     33621834,
+                                     4,
+                                     22
+                                 );
+
+INSERT INTO tbCelestialBuildings (
+                                     pIdCelestial,
+                                     pIdBuilding,
+                                     nLevel
+                                 )
+                                 VALUES (
+                                     33621834,
+                                     5,
+                                     17
+                                 );
+
+INSERT INTO tbCelestialBuildings (
+                                     pIdCelestial,
+                                     pIdBuilding,
+                                     nLevel
+                                 )
+                                 VALUES (
+                                     33621834,
+                                     6,
+                                     0
+                                 );
+
+INSERT INTO tbCelestialBuildings (
+                                     pIdCelestial,
+                                     pIdBuilding,
+                                     nLevel
+                                 )
+                                 VALUES (
+                                     33621834,
+                                     7,
+                                     9
+                                 );
+
+INSERT INTO tbCelestialBuildings (
+                                     pIdCelestial,
+                                     pIdBuilding,
+                                     nLevel
+                                 )
+                                 VALUES (
+                                     33621834,
+                                     8,
+                                     7
+                                 );
+
+INSERT INTO tbCelestialBuildings (
+                                     pIdCelestial,
+                                     pIdBuilding,
+                                     nLevel
+                                 )
+                                 VALUES (
+                                     33621834,
+                                     9,
+                                     5
+                                 );
 
 
 -- Table: tbCelestialConstruction
@@ -985,6 +1167,546 @@ CREATE UNIQUE INDEX sysdiagrams_UK_principal_name ON sysdiagrams (
 );
 
 
+-- View: vCelestialBuilding_CrystalMine
+DROP VIEW IF EXISTS vCelestialBuilding_CrystalMine;
+CREATE VIEW vCelestialBuilding_CrystalMine AS
+    SELECT tbCelestial.ID,
+           2 AS pIdBuilding,
+           IFNULL(tbCelestialBuildings.nLevel, 0) AS nLevel
+      FROM tbCelestial
+           LEFT OUTER JOIN
+           tbCelestialBuildings ON tbCelestial.ID = tbCelestialBuildings.pIdCelestial
+     WHERE tbCelestialBuildings.pIdBuilding = 2 OR 
+           tbCelestialBuildings.pIdBuilding IS NULL;
+
+
+-- View: vCelestialBuilding_CrystalStorage
+DROP VIEW IF EXISTS vCelestialBuilding_CrystalStorage;
+CREATE VIEW vCelestialBuilding_CrystalStorage AS
+    SELECT tbCelestial.ID,
+           8 AS pIdBuilding,
+           IFNULL(tbCelestialBuildings.nLevel, 0) AS nLevel
+      FROM tbCelestial
+           LEFT OUTER JOIN
+           tbCelestialBuildings ON tbCelestial.ID = tbCelestialBuildings.pIdCelestial
+     WHERE tbCelestialBuildings.pIdBuilding = 8 OR 
+           tbCelestialBuildings.pIdBuilding IS NULL;
+
+
+-- View: vCelestialBuilding_DeuteriumSynthesizer
+DROP VIEW IF EXISTS vCelestialBuilding_DeuteriumSynthesizer;
+CREATE VIEW vCelestialBuilding_DeuteriumSynthesizer AS
+    SELECT tbCelestial.ID,
+           3 AS pIdBuilding,
+           IFNULL(tbCelestialBuildings.nLevel, 0) AS nLevel
+      FROM tbCelestial
+           LEFT OUTER JOIN
+           tbCelestialBuildings ON tbCelestial.ID = tbCelestialBuildings.pIdCelestial
+     WHERE tbCelestialBuildings.pIdBuilding = 3 OR 
+           tbCelestialBuildings.pIdBuilding IS NULL;
+
+
+-- View: vCelestialBuilding_DeuteriumTank
+DROP VIEW IF EXISTS vCelestialBuilding_DeuteriumTank;
+CREATE VIEW vCelestialBuilding_DeuteriumTank AS
+    SELECT tbCelestial.ID,
+           9 AS pIdBuilding,
+           IFNULL(tbCelestialBuildings.nLevel, 0) AS nLevel
+      FROM tbCelestial
+           LEFT OUTER JOIN
+           tbCelestialBuildings ON tbCelestial.ID = tbCelestialBuildings.pIdCelestial
+     WHERE tbCelestialBuildings.pIdBuilding = 9 OR 
+           tbCelestialBuildings.pIdBuilding IS NULL;
+
+
+-- View: vCelestialBuilding_FusionReactor
+DROP VIEW IF EXISTS vCelestialBuilding_FusionReactor;
+CREATE VIEW vCelestialBuilding_FusionReactor AS
+    SELECT tbCelestial.ID,
+           5 AS pIdBuilding,
+           IFNULL(tbCelestialBuildings.nLevel, 0) AS nLevel
+      FROM tbCelestial
+           LEFT OUTER JOIN
+           tbCelestialBuildings ON tbCelestial.ID = tbCelestialBuildings.pIdCelestial
+     WHERE tbCelestialBuildings.pIdBuilding = 5 OR 
+           tbCelestialBuildings.pIdBuilding IS NULL;
+
+
+-- View: vCelestialBuilding_MetalMine
+DROP VIEW IF EXISTS vCelestialBuilding_MetalMine;
+CREATE VIEW vCelestialBuilding_MetalMine AS
+    SELECT tbCelestial.ID,
+           1 AS pIdBuilding,
+           IFNULL(tbCelestialBuildings.nLevel, 0) AS nLevel
+      FROM tbCelestial
+           LEFT OUTER JOIN
+           tbCelestialBuildings ON tbCelestial.ID = tbCelestialBuildings.pIdCelestial
+     WHERE tbCelestialBuildings.pIdBuilding = 1 OR 
+           tbCelestialBuildings.pIdBuilding IS NULL;
+
+
+-- View: vCelestialBuilding_MetalStorage
+DROP VIEW IF EXISTS vCelestialBuilding_MetalStorage;
+CREATE VIEW vCelestialBuilding_MetalStorage AS
+    SELECT tbCelestial.ID,
+           7 AS pIdBuilding,
+           IFNULL(tbCelestialBuildings.nLevel, 0) AS nLevel
+      FROM tbCelestial
+           LEFT OUTER JOIN
+           tbCelestialBuildings ON tbCelestial.ID = tbCelestialBuildings.pIdCelestial
+     WHERE tbCelestialBuildings.pIdBuilding = 7 OR 
+           tbCelestialBuildings.pIdBuilding IS NULL;
+
+
+-- View: vCelestialBuilding_SolarPlant
+DROP VIEW IF EXISTS vCelestialBuilding_SolarPlant;
+CREATE VIEW vCelestialBuilding_SolarPlant AS
+    SELECT tbCelestial.ID,
+           4 AS pIdBuilding,
+           IFNULL(tbCelestialBuildings.nLevel, 0) AS nLevel
+      FROM tbCelestial
+           LEFT OUTER JOIN
+           tbCelestialBuildings ON tbCelestial.ID = tbCelestialBuildings.pIdCelestial
+     WHERE tbCelestialBuildings.pIdBuilding = 4 OR 
+           tbCelestialBuildings.pIdBuilding IS NULL;
+
+
+-- View: vCelestialBuilding_SolarSatellite
+DROP VIEW IF EXISTS vCelestialBuilding_SolarSatellite;
+CREATE VIEW vCelestialBuilding_SolarSatellite AS
+    SELECT tbCelestial.ID,
+           6 AS pIdBuilding,
+           IFNULL(tbCelestialBuildings.nLevel, 0) AS nLevel
+      FROM tbCelestial
+           LEFT OUTER JOIN
+           tbCelestialBuildings ON tbCelestial.ID = tbCelestialBuildings.pIdCelestial
+     WHERE tbCelestialBuildings.pIdBuilding = 6 OR 
+           tbCelestialBuildings.pIdBuilding IS NULL;
+
+
+-- View: vCelestialBuildings
+DROP VIEW IF EXISTS vCelestialBuildings;
+CREATE VIEW vCelestialBuildings AS
+    SELECT tbCelestial.ID,
+           IFNULL(vCelestialBuilding_MetalMine.nLevel, 0) AS nMetalMine,
+           IFNULL(vCelestialBuilding_CrystalMine.nLevel, 0) AS nCrystalMine,
+           IFNULL(vCelestialBuilding_DeuteriumSynthesizer.nLevel, 0) AS nDeuteriumSynthesizer,
+           IFNULL(vCelestialBuilding_SolarPlant.nLevel, 0) AS nSolarPlant,
+           IFNULL(vCelestialBuilding_FusionReactor.nLevel, 0) AS nFusionReactor,
+           IFNULL(vCelestialBuilding_SolarSatellite.nLevel, 0) AS nSolarSatellite,
+           IFNULL(vCelestialBuilding_MetalStorage.nLevel, 0) AS nMetalStorage,
+           IFNULL(vCelestialBuilding_CrystalStorage.nLevel, 0) AS nCrystalStorage,
+           IFNULL(vCelestialBuilding_DeuteriumTank.nLevel, 0) AS nDeuteriumTank
+      FROM tbCelestial
+           LEFT OUTER JOIN
+           vCelestialBuilding_MetalMine ON tbCelestial.ID = vCelestialBuilding_MetalMine.ID
+           LEFT OUTER JOIN
+           vCelestialBuilding_CrystalMine ON tbCelestial.ID = vCelestialBuilding_CrystalMine.ID
+           LEFT OUTER JOIN
+           vCelestialBuilding_DeuteriumSynthesizer ON tbCelestial.ID = vCelestialBuilding_DeuteriumSynthesizer.ID
+           LEFT OUTER JOIN
+           vCelestialBuilding_SolarPlant ON tbCelestial.ID = vCelestialBuilding_SolarPlant.ID
+           LEFT OUTER JOIN
+           vCelestialBuilding_FusionReactor ON tbCelestial.ID = vCelestialBuilding_FusionReactor.ID
+           LEFT OUTER JOIN
+           vCelestialBuilding_SolarSatellite ON tbCelestial.ID = vCelestialBuilding_SolarSatellite.ID
+           LEFT OUTER JOIN
+           vCelestialBuilding_MetalStorage ON tbCelestial.ID = vCelestialBuilding_MetalStorage.ID
+           LEFT OUTER JOIN
+           vCelestialBuilding_CrystalStorage ON tbCelestial.ID = vCelestialBuilding_CrystalStorage.ID
+           LEFT OUTER JOIN
+           vCelestialBuilding_DeuteriumTank ON tbCelestial.ID = vCelestialBuilding_DeuteriumTank.ID;
+
+
+-- View: vCelestialDefence_AntiBallisticMissiles
+DROP VIEW IF EXISTS vCelestialDefence_AntiBallisticMissiles;
+CREATE VIEW vCelestialDefence_AntiBallisticMissiles AS
+    SELECT tbCelestial.ID,
+           9 AS pIdDefence,
+           IFNULL(tbCelestialDefences.nQuantity, 0) AS nQty
+      FROM tbCelestial
+           LEFT OUTER JOIN
+           tbCelestialDefences ON tbCelestial.ID = tbCelestialDefences.pIdCelestial
+     WHERE tbCelestialDefences.pIdCelestialDefences = 9 OR 
+           tbcelestialDefences.pIdCelestialDefences IS NULL;
+
+
+-- View: vCelestialDefence_GaussCannon
+DROP VIEW IF EXISTS vCelestialDefence_GaussCannon;
+CREATE VIEW vCelestialDefence_GaussCannon AS
+    SELECT tbCelestial.ID,
+           4 AS pIdDefence,
+           IFNULL(tbCelestialDefences.nQuantity, 0) AS nQty
+      FROM tbCelestial
+           LEFT OUTER JOIN
+           tbCelestialDefences ON tbCelestial.ID = tbCelestialDefences.pIdCelestial
+     WHERE tbCelestialDefences.pIdCelestialDefences = 4 OR 
+           tbcelestialDefences.pIdCelestialDefences IS NULL;
+
+
+-- View: vCelestialDefence_HeavyLaser
+DROP VIEW IF EXISTS vCelestialDefence_HeavyLaser;
+CREATE VIEW vCelestialDefence_HeavyLaser AS
+    SELECT tbCelestial.ID,
+           3 AS pIdDefence,
+           IFNULL(tbCelestialDefences.nQuantity, 0) AS nQty
+      FROM tbCelestial
+           LEFT OUTER JOIN
+           tbCelestialDefences ON tbCelestial.ID = tbCelestialDefences.pIdCelestial
+     WHERE tbCelestialDefences.pIdCelestialDefences = 3 OR 
+           tbcelestialDefences.pIdCelestialDefences IS NULL;
+
+
+-- View: vCelestialDefence_InterplanetaryMissiles
+DROP VIEW IF EXISTS vCelestialDefence_InterplanetaryMissiles;
+CREATE VIEW vCelestialDefence_InterplanetaryMissiles AS
+    SELECT tbCelestial.ID,
+           10 AS pIdDefence,
+           IFNULL(tbCelestialDefences.nQuantity, 0) AS nQty
+      FROM tbCelestial
+           LEFT OUTER JOIN
+           tbCelestialDefences ON tbCelestial.ID = tbCelestialDefences.pIdCelestial
+     WHERE tbCelestialDefences.pIdCelestialDefences = 10 OR 
+           tbcelestialDefences.pIdCelestialDefences IS NULL;
+
+
+-- View: vCelestialDefence_IonCannon
+DROP VIEW IF EXISTS vCelestialDefence_IonCannon;
+CREATE VIEW vCelestialDefence_IonCannon AS
+    SELECT tbCelestial.ID,
+           5 AS pIdDefence,
+           IFNULL(tbCelestialDefences.nQuantity, 0) AS nQty
+      FROM tbCelestial
+           LEFT OUTER JOIN
+           tbCelestialDefences ON tbCelestial.ID = tbCelestialDefences.pIdCelestial
+     WHERE tbCelestialDefences.pIdCelestialDefences = 5 OR 
+           tbcelestialDefences.pIdCelestialDefences IS NULL;
+
+
+-- View: vCelestialDefence_LargeShieldDome
+DROP VIEW IF EXISTS vCelestialDefence_LargeShieldDome;
+CREATE VIEW vCelestialDefence_LargeShieldDome AS
+    SELECT tbCelestial.ID,
+           8 AS pIdDefence,
+           IFNULL(tbCelestialDefences.nQuantity, 0) AS nQty
+      FROM tbCelestial
+           LEFT OUTER JOIN
+           tbCelestialDefences ON tbCelestial.ID = tbCelestialDefences.pIdCelestial
+     WHERE tbCelestialDefences.pIdCelestialDefences = 8 OR 
+           tbcelestialDefences.pIdCelestialDefences IS NULL;
+
+
+-- View: vCelestialDefence_LightLaser
+DROP VIEW IF EXISTS vCelestialDefence_LightLaser;
+CREATE VIEW vCelestialDefence_LightLaser AS
+    SELECT tbCelestial.ID,
+           2 AS pIdDefence,
+           IFNULL(tbCelestialDefences.nQuantity, 0) AS nQty
+      FROM tbCelestial
+           LEFT OUTER JOIN
+           tbCelestialDefences ON tbCelestial.ID = tbCelestialDefences.pIdCelestial
+     WHERE tbCelestialDefences.pIdCelestialDefences = 2 OR 
+           tbcelestialDefences.pIdCelestialDefences IS NULL;
+
+
+-- View: vCelestialDefence_PlasmaTurret
+DROP VIEW IF EXISTS vCelestialDefence_PlasmaTurret;
+CREATE VIEW vCelestialDefence_PlasmaTurret AS
+    SELECT tbCelestial.ID,
+           6 AS pIdDefence,
+           IFNULL(tbCelestialDefences.nQuantity, 0) AS nQty
+      FROM tbCelestial
+           LEFT OUTER JOIN
+           tbCelestialDefences ON tbCelestial.ID = tbCelestialDefences.pIdCelestial
+     WHERE tbCelestialDefences.pIdCelestialDefences = 6 OR 
+           tbcelestialDefences.pIdCelestialDefences IS NULL;
+
+
+-- View: vCelestialDefence_RocketLauncher
+DROP VIEW IF EXISTS vCelestialDefence_RocketLauncher;
+CREATE VIEW vCelestialDefence_RocketLauncher AS
+    SELECT tbCelestial.ID,
+           1 AS pIdDefence,
+           IFNULL(tbCelestialDefences.nQuantity, 0) AS nQty
+      FROM tbCelestial
+           LEFT OUTER JOIN
+           tbCelestialDefences ON tbCelestial.ID = tbCelestialDefences.pIdCelestial
+     WHERE tbCelestialDefences.pIdCelestialDefences = 1 OR 
+           tbcelestialDefences.pIdCelestialDefences IS NULL;
+
+
+-- View: vCelestialDefence_SmallShieldDome
+DROP VIEW IF EXISTS vCelestialDefence_SmallShieldDome;
+CREATE VIEW vCelestialDefence_SmallShieldDome AS
+    SELECT tbCelestial.ID,
+           7 AS pIdDefence,
+           IFNULL(tbCelestialDefences.nQuantity, 0) AS nQty
+      FROM tbCelestial
+           LEFT OUTER JOIN
+           tbCelestialDefences ON tbCelestial.ID = tbCelestialDefences.pIdCelestial
+     WHERE tbCelestialDefences.pIdCelestialDefences = 7 OR 
+           tbcelestialDefences.pIdCelestialDefences IS NULL;
+
+
+-- View: vCelestialDefences
+DROP VIEW IF EXISTS vCelestialDefences;
+CREATE VIEW vCelestialDefences AS
+    SELECT tbCelestial.ID,
+           IFNULL(vCelestialDefence_RocketLauncher.nQty, 0) AS nRocketLauncher,
+           IFNULL(vCelestialDefence_LightLaser.nQty, 0) AS nLightLaser,
+           IFNULL(vCelestialDefence_HeavyLaser.nQty, 0) AS nHeavyLaser,
+           IFNULL(vCelestialDefence_GaussCannon.nQty, 0) AS nGaussCannon,
+           IFNULL(vCelestialDefence_IonCannon.nQty, 0) AS nIonCannon,
+           IFNULL(vCelestialDefence_PlasmaTurret.nQty, 0) AS nPlasmaTurret,
+           IFNULL(vCelestialDefence_SmallShieldDome.nQty, 0) AS nSmallShieldDome,
+           IFNULL(vCelestialDefence_LargeShieldDome.nQty, 0) AS nLargeShieldDome,
+           IFNULL(vCelestialDefence_AntiBallisticMissiles.nQty, 0) AS nAntiBallisticMissiles,
+           IFNULL(vCelestialDefence_InterplanetaryMissiles.nQty, 0) AS nInterplanetaryMissiles
+      FROM tbCelestial
+           INNER JOIN
+           vCelestialDefence_RocketLauncher ON tbCelestial.ID = vCelestialDefence_RocketLauncher.ID
+           INNER JOIN
+           vCelestialDefence_LightLaser ON tbCelestial.ID = vCelestialDefence_LightLaser.ID
+           INNER JOIN
+           vCelestialDefence_HeavyLaser ON tbCelestial.ID = vCelestialDefence_HeavyLaser.ID
+           INNER JOIN
+           vCelestialDefence_GaussCannon ON tbCelestial.ID = vCelestialDefence_GaussCannon.ID
+           INNER JOIN
+           vCelestialDefence_IonCannon ON tbCelestial.ID = vCelestialDefence_IonCannon.ID
+           INNER JOIN
+           vCelestialDefence_PlasmaTurret ON tbCelestial.ID = vCelestialDefence_PlasmaTurret.ID
+           INNER JOIN
+           vCelestialDefence_SmallShieldDome ON tbCelestial.ID = vCelestialDefence_SmallShieldDome.ID
+           INNER JOIN
+           vCelestialDefence_LargeShieldDome ON tbCelestial.ID = vCelestialDefence_LargeShieldDome.ID
+           INNER JOIN
+           vCelestialDefence_AntiBallisticMissiles ON tbCelestial.ID = vCelestialDefence_AntiBallisticMissiles.ID
+           INNER JOIN
+           vCelestialDefence_InterplanetaryMissiles ON tbCelestial.ID = vCelestialDefence_InterplanetaryMissiles.ID;
+
+
+-- View: vCelestialFacilities
+DROP VIEW IF EXISTS vCelestialFacilities;
+CREATE VIEW vCelestialFacilities AS
+    SELECT tbCelestial.ID,
+           IFNULL(vCelestialFacilities_RoboticsFactory.nLevel, 0) AS nRoboticsFactory,
+           IFNULL(vCelestialFacilities_Shipyard.nLevel, 0) AS nShipyard,
+           IFNULL(vCelestialFacilities_ResearchLab.nLevel, 0) AS nResearchLab,
+           IFNULL(vCelestialFacilities_AllianceDepot.nLevel, 0) AS nAllianceDepot,
+           IFNULL(vCelestialFacilities_MissileSilo.nLevel, 0) AS nMissileSilo,
+           IFNULL(vCelestialFacilities_NaniteFactory.nLevel, 0) AS nNaniteFactory,
+           IFNULL(vCelestialFacilities_Terraformer.nLevel, 0) AS nTerraformer,
+           IFNULL(vCelestialFacilities_SpaceDock.nLevel, 0) AS nSpaceDock
+      FROM tbCelestial
+           INNER JOIN
+           vCelestialFacilities_RoboticsFactory ON tbCelestial.ID = vCelestialFacilities_RoboticsFactory.ID
+           INNER JOIN
+           vCelestialFacilities_Shipyard ON tbCelestial.ID = vCelestialFacilities_Shipyard.ID
+           INNER JOIN
+           vCelestialFacilities_ResearchLab ON tbCelestial.ID = vCelestialFacilities_ResearchLab.ID
+           INNER JOIN
+           vCelestialFacilities_AllianceDepot ON tbCelestial.ID = vCelestialFacilities_AllianceDepot.ID
+           INNER JOIN
+           vCelestialFacilities_MissileSilo ON tbCelestial.ID = vCelestialFacilities_MissileSilo.ID
+           INNER JOIN
+           vCelestialFacilities_NaniteFactory ON tbCelestial.ID = vCelestialFacilities_NaniteFactory.ID
+           INNER JOIN
+           vCelestialFacilities_Terraformer ON tbCelestial.ID = vCelestialFacilities_Terraformer.ID
+           INNER JOIN
+           vCelestialFacilities_SpaceDock ON tbCelestial.ID = vCelestialFacilities_SpaceDock.ID;
+
+
+-- View: vCelestialFacilities_AllianceDepot
+DROP VIEW IF EXISTS vCelestialFacilities_AllianceDepot;
+CREATE VIEW vCelestialFacilities_AllianceDepot AS
+    SELECT tbCelestial.ID,
+           4 AS pIdFacility,
+           IFNULL(tbCelestialFacilities.nLevel, 0) AS nLevel
+      FROM tbCelestial
+           LEFT OUTER JOIN
+           tbCelestialFacilities ON tbcelestial.ID = tbCelestialFacilities.pIdCelestial
+     WHERE tbCelestialFacilities.pIdFacility = 4 OR 
+           tbCelestialFacilities.pIdFacility IS NULL;
+
+
+-- View: vCelestialFacilities_MissileSilo
+DROP VIEW IF EXISTS vCelestialFacilities_MissileSilo;
+CREATE VIEW vCelestialFacilities_MissileSilo AS
+    SELECT tbCelestial.ID,
+           5 AS pIdFacility,
+           IFNULL(tbCelestialFacilities.nLevel, 0) AS nLevel
+      FROM tbCelestial
+           LEFT OUTER JOIN
+           tbCelestialFacilities ON tbcelestial.ID = tbCelestialFacilities.pIdCelestial
+     WHERE tbCelestialFacilities.pIdFacility = 5 OR 
+           tbCelestialFacilities.pIdFacility IS NULL;
+
+
+-- View: vCelestialFacilities_NaniteFactory
+DROP VIEW IF EXISTS vCelestialFacilities_NaniteFactory;
+CREATE VIEW vCelestialFacilities_NaniteFactory AS
+    SELECT tbCelestial.ID,
+           6 AS pIdFacility,
+           IFNULL(tbCelestialFacilities.nLevel, 0) AS nLevel
+      FROM tbCelestial
+           LEFT OUTER JOIN
+           tbCelestialFacilities ON tbcelestial.ID = tbCelestialFacilities.pIdCelestial
+     WHERE tbCelestialFacilities.pIdFacility = 6 OR 
+           tbCelestialFacilities.pIdFacility IS NULL;
+
+
+-- View: vCelestialFacilities_ResearchLab
+DROP VIEW IF EXISTS vCelestialFacilities_ResearchLab;
+CREATE VIEW vCelestialFacilities_ResearchLab AS
+    SELECT tbCelestial.ID,
+           3 AS pIdFacility,
+           IFNULL(tbCelestialFacilities.nLevel, 0) AS nLevel
+      FROM tbCelestial
+           LEFT OUTER JOIN
+           tbCelestialFacilities ON tbcelestial.ID = tbCelestialFacilities.pIdCelestial
+     WHERE tbCelestialFacilities.pIdFacility = 3 OR 
+           tbCelestialFacilities.pIdFacility IS NULL;
+
+
+-- View: vCelestialFacilities_RoboticsFactory
+DROP VIEW IF EXISTS vCelestialFacilities_RoboticsFactory;
+CREATE VIEW vCelestialFacilities_RoboticsFactory AS
+    SELECT tbCelestial.ID,
+           1 AS pIdFacility,
+           IFNULL(tbCelestialFacilities.nLevel, 0) AS nLevel
+      FROM tbCelestial
+           LEFT OUTER JOIN
+           tbCelestialFacilities ON tbcelestial.ID = tbCelestialFacilities.pIdCelestial
+     WHERE tbCelestialFacilities.pIdFacility = 1 OR 
+           tbCelestialFacilities.pIdFacility IS NULL;
+
+
+-- View: vCelestialFacilities_Shipyard
+DROP VIEW IF EXISTS vCelestialFacilities_Shipyard;
+CREATE VIEW vCelestialFacilities_Shipyard AS
+    SELECT tbCelestial.ID,
+           2 AS pIdFacility,
+           IFNULL(tbCelestialFacilities.nLevel, 0) AS nLevel
+      FROM tbCelestial
+           LEFT OUTER JOIN
+           tbCelestialFacilities ON tbcelestial.ID = tbCelestialFacilities.pIdCelestial
+     WHERE tbCelestialFacilities.pIdFacility = 2 OR 
+           tbCelestialFacilities.pIdFacility IS NULL;
+
+
+-- View: vCelestialFacilities_SpaceDock
+DROP VIEW IF EXISTS vCelestialFacilities_SpaceDock;
+CREATE VIEW vCelestialFacilities_SpaceDock AS
+    SELECT tbCelestial.ID,
+           7 AS pIdFacility,
+           IFNULL(tbCelestialFacilities.nLevel, 0) AS nLevel
+      FROM tbCelestial
+           LEFT OUTER JOIN
+           tbCelestialFacilities ON tbcelestial.ID = tbCelestialFacilities.pIdCelestial
+     WHERE tbCelestialFacilities.pIdFacility = 7 OR 
+           tbCelestialFacilities.pIdFacility IS NULL;
+
+
+-- View: vCelestialFacilities_Terraformer
+DROP VIEW IF EXISTS vCelestialFacilities_Terraformer;
+CREATE VIEW vCelestialFacilities_Terraformer AS
+    SELECT tbCelestial.ID,
+           7 AS pIdFacility,
+           IFNULL(tbCelestialFacilities.nLevel, 0) AS nLevel
+      FROM tbCelestial
+           LEFT OUTER JOIN
+           tbCelestialFacilities ON tbcelestial.ID = tbCelestialFacilities.pIdCelestial
+     WHERE tbCelestialFacilities.pIdFacility = 7 OR 
+           tbCelestialFacilities.pIdFacility IS NULL;
+
+
+-- View: vCelestialResource_Crystal
+DROP VIEW IF EXISTS vCelestialResource_Crystal;
+CREATE VIEW vCelestialResource_Crystal AS
+    SELECT tbCelestial.ID,
+           2 AS pIdResource,
+           IFNULL(tbCelestialResources.nLevel, 0) AS nLevel
+      FROM tbCelestial
+           LEFT OUTER JOIN
+           tbCelestialResources ON tbCelestial.ID = tbCelestialResources.pIdCelestial
+     WHERE tbCelestialResources.pIdResource = 2 OR 
+           tbCelestialResources.pIdResource IS NULL;
+
+
+-- View: vCelestialResource_DarkMatter
+DROP VIEW IF EXISTS vCelestialResource_DarkMatter;
+CREATE VIEW vCelestialResource_DarkMatter AS
+    SELECT tbCelestial.ID,
+           5 AS pIdResource,
+           IFNULL(tbCelestialResources.nLevel, 0) AS nLevel
+      FROM tbCelestial
+           LEFT OUTER JOIN
+           tbCelestialResources ON tbCelestial.ID = tbCelestialResources.pIdCelestial
+     WHERE tbCelestialResources.pIdResource = 5 OR 
+           tbCelestialResources.pIdResource IS NULL;
+
+
+-- View: vCelestialResource_Deuterium
+DROP VIEW IF EXISTS vCelestialResource_Deuterium;
+CREATE VIEW vCelestialResource_Deuterium AS
+    SELECT tbCelestial.ID,
+           3 AS pIdResource,
+           IFNULL(tbCelestialResources.nLevel, 0) AS nLevel
+      FROM tbCelestial
+           LEFT OUTER JOIN
+           tbCelestialResources ON tbCelestial.ID = tbCelestialResources.pIdCelestial
+     WHERE tbCelestialResources.pIdResource = 3 OR 
+           tbCelestialResources.pIdResource IS NULL;
+
+
+-- View: vCelestialResource_Energy
+DROP VIEW IF EXISTS vCelestialResource_Energy;
+CREATE VIEW vCelestialResource_Energy AS
+    SELECT tbCelestial.ID,
+           4 AS pIdResource,
+           IFNULL(tbCelestialResources.nLevel, 0) AS nLevel
+      FROM tbCelestial
+           LEFT OUTER JOIN
+           tbCelestialResources ON tbCelestial.ID = tbCelestialResources.pIdCelestial
+     WHERE tbCelestialResources.pIdResource = 4 OR 
+           tbCelestialResources.pIdResource IS NULL;
+
+
+-- View: vCelestialResource_Metal
+DROP VIEW IF EXISTS vCelestialResource_Metal;
+CREATE VIEW vCelestialResource_Metal AS
+    SELECT tbCelestial.ID,
+           1 AS pIdResource,
+           IFNULL(tbCelestialResources.nLevel, 0) AS nLevel
+      FROM tbCelestial
+           LEFT OUTER JOIN
+           tbCelestialResources ON tbCelestial.ID = tbCelestialResources.pIdCelestial
+     WHERE tbCelestialResources.pIdResource = 1 OR 
+           tbCelestialResources.pIdResource IS NULL;
+
+
+-- View: vCelestialResources
+DROP VIEW IF EXISTS vCelestialResources;
+CREATE VIEW vCelestialResources AS
+    SELECT tbCelestial.ID,
+           IFNULL(vCelestialResource_Metal.nLevel, 0) AS nMetal,
+           IFNULL(vCelestialResource_Crystal.nLevel, 0) AS nCrystal,
+           IFNULL(vCelestialResource_Deuterium.nLevel, 0) AS nDeuterium,
+           IFNULL(vCelestialResource_Energy.nLevel, 0) AS nEnergy,
+           IFNULL(vCelestialResource_DarkMatter.nLevel, 0) AS nDarkMatter
+      FROM tbCelestial
+           LEFT OUTER JOIN
+           vCelestialResource_Metal ON tbCelestial.ID = vCelestialResource_Metal.ID
+           LEFT OUTER JOIN
+           vCelestialResource_Crystal ON tbCelestial.ID = vCelestialResource_Crystal.ID
+           LEFT OUTER JOIN
+           vCelestialResource_Deuterium ON tbCelestial.ID = vCelestialResource_Deuterium.ID
+           LEFT OUTER JOIN
+           vCelestialResource_Energy ON tbCelestial.ID = vCelestialResource_Energy.ID
+           LEFT OUTER JOIN
+           vCelestialResource_DarkMatter ON tbCelestial.ID = vCelestialResource_DarkMatter.ID;
+
+
 -- View: vCelestials
 DROP VIEW IF EXISTS vCelestials;
 CREATE VIEW vCelestials AS
@@ -992,48 +1714,350 @@ CREATE VIEW vCelestials AS
            tbCelestial.Name,
            tbCelestial.Diameter,
            tbCelestial.Activity,
-           tbCelestialResources.pIdResource,
-           tbCelestialResources.nLevel,
-           tbCelestialDefences.pIdDefence,
-           tbCelestialDefences.nQuantity,
-           tbCelestialFacilities.pIdFacility,
-           tbCelestialFacilities.nLevel AS nFacilityLevel,
-           tbCoordinate.Galaxy,
-           tbCoordinate.System,
-           tbCoordinate.Position,
-           tbCoordinate.pIdCelestialType,
-           tbCelestialType.sDescription,
-           tbCelestialBuildings.pIdBuilding,
-           tbCelestialBuildings.nLevel AS nBuildingLevel,
-           tbCelestialConstruction.pIdBuilding AS pIdBuildingConst,
-           tbCelestialConstruction.nBuildingCountdown,
-           tbCelestialConstruction.pIdResearch,
-           tbCelestialConstruction.nResearchCountdown,
-           tbCelestialShip.pIdShip,
-           tbCelestialShip.nShips
+           nBattleCruiser,
+           nBattleship,
+           nBomber,
+           nColonyShip,
+           nCrawler,
+           nCruiser,
+           nDeathStar,
+           nDestroyer,
+           nEspionageProbe,
+           nHeavyFighter,
+           nLargeCargo,
+           nLightFighter,
+           nPathFinder,
+           nReaper,
+           nRecycler,
+           nSmallCargo,
+           vCelestialShips.nSolarSatellite AS nSolarSatelliteShip,
+           nRocketLauncher,
+           nLightLaser,
+           nHeavyLaser,
+           nGaussCannon,
+           nIonCannon,
+           nPlasmaTurret,
+           nSmallShieldDome,
+           nLargeShieldDome,
+           nAntiBallisticMissiles,
+           nInterplanetaryMissiles,
+           nRoboticsFactory,
+           nShipyard,
+           nResearchLab,
+           nAllianceDepot,
+           nMissileSilo,
+           nNaniteFactory,
+           nTerraformer,
+           nSpaceDock,
+           nMetal,
+           nCrystal,
+           nDeuterium,
+           nEnergy,
+           nDarkMatter,
+           nMetalMine,
+           nCrystalMine,
+           nDeuteriumSynthesizer,
+           nSolarPlant,
+           nFusionReactor,
+           vCelestialBuildings.nSolarSatellite AS nSolarSatelliteBuilding,
+           nMetalStorage,
+           nCrystalStorage,
+           nDeuteriumTank
       FROM tbCelestial
-           LEFT JOIN
+           LEFT OUTER JOIN
+           vCelestialShips ON tbCelestial.ID = vCelestialShips.ID
+           LEFT OUTER JOIN
+           vCelestialDefences ON tbCelestial.ID = vCelestialDefences.ID
+           LEFT OUTER JOIN
+           vCelestialFacilities ON tbCelestial.ID = vCelestialFacilities.ID
+           LEFT OUTER JOIN
+           vCelestialResources ON tbCelestial.ID = vCelestialResources.ID
+           LEFT OUTER JOIN
+           vCelestialBuildings ON tbCelestial.ID = vCelestialBuildings.ID;
+
+
+-- View: vCelestialShip_BattleCruiser
+DROP VIEW IF EXISTS vCelestialShip_BattleCruiser;
+CREATE VIEW vCelestialShip_BattleCruiser AS
+    SELECT tbCelestial.ID,
+           5 AS pIdShip,
+           IFNULL(tbCelestialShip.nShips, 0) AS nShips
+      FROM tbCelestial
+           LEFT OUTER JOIN
            tbCelestialShip ON tbCelestial.ID = tbCelestialShip.pIdCelestial
-           LEFT JOIN
-           Coordinate ON tbCelestial.ID = tbCoordinate.pIdCelestial
-           LEFT JOIN
-           tbCelestialFacilities ON tbCelestial.ID = tbCelestialFacilities.pIdCelestial
-           LEFT JOIN
-           tbCelestialResources ON tbCelestial.ID = tbCelestialResources.pIdCelestial
-           LEFT JOIN
-           tbCelestialDefences ON tbCelestial.ID = tbCelestialDefences.pIdCelestial
-           LEFT JOIN
-           tbCelestialConstruction ON tbCelestial.ID = tbCelestialConstruction.pIdCelestial
-           LEFT JOIN
-           tbCelestialBuildings ON tbCelestial.ID = tbCelestialBuildings.pIdCelestialBuilding
-           LEFT JOIN
-           tbCelestialType
-           LEFT JOIN
-           tbCoordinate ON tbCelestialType.pIdCelestialType = tbCoordinate.pIdCelestialType;
+     WHERE tbCelestialShip.pIdShip = 5 OR 
+           tbCelestialShip.pIdShip IS NULL;
+
+
+-- View: vCelestialShip_Battleship
+DROP VIEW IF EXISTS vCelestialShip_Battleship;
+CREATE VIEW vCelestialShip_Battleship AS
+    SELECT tbCelestial.ID,
+           4 AS pIdShip,
+           IFNULL(tbCelestialShip.nShips, 0) AS nShips
+      FROM tbCelestial
+           LEFT OUTER JOIN
+           tbCelestialShip ON tbCelestial.ID = tbCelestialShip.pIdCelestial
+     WHERE tbCelestialShip.pIdShip = 4 OR 
+           tbCelestialShip.pIdShip IS NULL;
+
+
+-- View: vCelestialShip_Bomber
+DROP VIEW IF EXISTS vCelestialShip_Bomber;
+CREATE VIEW vCelestialShip_Bomber AS
+    SELECT tbCelestial.ID,
+           6 AS pIdShip,
+           IFNULL(tbCelestialShip.nShips, 0) AS nShips
+      FROM tbCelestial
+           LEFT OUTER JOIN
+           tbCelestialShip ON tbCelestial.ID = tbCelestialShip.pIdCelestial
+     WHERE tbCelestialShip.pIdShip = 6 OR 
+           tbCelestialShip.pIdShip IS NULL;
+
+
+-- View: vCelestialShip_ColonyShip
+DROP VIEW IF EXISTS vCelestialShip_ColonyShip;
+CREATE VIEW vCelestialShip_ColonyShip AS
+    SELECT tbCelestial.ID,
+           11 AS pIdShip,
+           IFNULL(tbCelestialShip.nShips, 0) AS nShips
+      FROM tbCelestial
+           LEFT OUTER JOIN
+           tbCelestialShip ON tbCelestial.ID = tbCelestialShip.pIdCelestial
+     WHERE tbCelestialShip.pIdShip = 11 OR 
+           tbCelestialShip.pIdShip IS NULL;
+
+
+-- View: vCelestialShip_Crawler
+DROP VIEW IF EXISTS vCelestialShip_Crawler;
+CREATE VIEW vCelestialShip_Crawler AS
+    SELECT tbCelestial.ID,
+           15 AS pIdShip,
+           IFNULL(tbCelestialShip.nShips, 0) AS nShips
+      FROM tbCelestial
+           LEFT OUTER JOIN
+           tbCelestialShip ON tbCelestial.ID = tbCelestialShip.pIdCelestial
+     WHERE tbCelestialShip.pIdShip = 15 OR 
+           tbCelestialShip.pIdShip IS NULL;
+
+
+-- View: vCelestialShip_Cruiser
+DROP VIEW IF EXISTS vCelestialShip_Cruiser;
+CREATE VIEW vCelestialShip_Cruiser AS
+    SELECT tbCelestial.ID,
+           3 AS pIdShip,
+           IFNULL(tbCelestialShip.nShips, 0) AS nShips
+      FROM tbCelestial
+           LEFT OUTER JOIN
+           tbCelestialShip ON tbCelestial.ID = tbCelestialShip.pIdCelestial
+     WHERE tbCelestialShip.pIdShip = 3 OR 
+           tbCelestialShip.pIdShip IS NULL;
+
+
+-- View: vCelestialShip_Deathstar
+DROP VIEW IF EXISTS vCelestialShip_Deathstar;
+CREATE VIEW vCelestialShip_Deathstar AS
+    SELECT tbCelestial.ID,
+           8 AS pIdShip,
+           IFNULL(tbCelestialShip.nShips, 0) AS nShips
+      FROM tbCelestial
+           LEFT OUTER JOIN
+           tbCelestialShip ON tbCelestial.ID = tbCelestialShip.pIdCelestial
+     WHERE tbCelestialShip.pIdShip = 8 OR 
+           tbCelestialShip.pIdShip IS NULL;
+
+
+-- View: vCelestialShip_Destroyer
+DROP VIEW IF EXISTS vCelestialShip_Destroyer;
+CREATE VIEW vCelestialShip_Destroyer AS
+    SELECT tbCelestial.ID,
+           7 AS pIdShip,
+           IFNULL(tbCelestialShip.nShips, 0) AS nShips
+      FROM tbCelestial
+           LEFT OUTER JOIN
+           tbCelestialShip ON tbCelestial.ID = tbCelestialShip.pIdCelestial
+     WHERE tbCelestialShip.pIdShip = 7 OR 
+           tbCelestialShip.pIdShip IS NULL;
+
+
+-- View: vCelestialShip_EspionageProbe
+DROP VIEW IF EXISTS vCelestialShip_EspionageProbe;
+CREATE VIEW vCelestialShip_EspionageProbe AS
+    SELECT tbCelestial.ID,
+           13 AS pIdShip,
+           IFNULL(tbCelestialShip.nShips, 0) AS nShips
+      FROM tbCelestial
+           LEFT OUTER JOIN
+           tbCelestialShip ON tbCelestial.ID = tbCelestialShip.pIdCelestial
+     WHERE tbCelestialShip.pIdShip = 13 OR 
+           tbCelestialShip.pIdShip IS NULL;
+
+
+-- View: vCelestialShip_HeavyFighter
+DROP VIEW IF EXISTS vCelestialShip_HeavyFighter;
+CREATE VIEW vCelestialShip_HeavyFighter AS
+    SELECT tbCelestial.ID,
+           2 AS pIdShip,
+           IFNULL(tbCelestialShip.nShips, 0) AS nShips
+      FROM tbCelestial
+           LEFT OUTER JOIN
+           tbCelestialShip ON tbCelestial.ID = tbCelestialShip.pIdCelestial
+     WHERE tbCelestialShip.pIdShip = 2 OR 
+           tbCelestialShip.pIdShip IS NULL;
+
+
+-- View: vCelestialShip_LargeCargo
+DROP VIEW IF EXISTS vCelestialShip_LargeCargo;
+CREATE VIEW vCelestialShip_LargeCargo AS
+    SELECT tbCelestial.ID,
+           10 AS pIdShip,
+           IFNULL(tbCelestialShip.nShips, 0) AS nShips
+      FROM tbCelestial
+           LEFT OUTER JOIN
+           tbCelestialShip ON tbCelestial.ID = tbCelestialShip.pIdCelestial
+     WHERE tbCelestialShip.pIdShip = 10 OR 
+           tbCelestialShip.pIdShip IS NULL;
+
+
+-- View: vCelestialShip_LightFighter
+DROP VIEW IF EXISTS vCelestialShip_LightFighter;
+CREATE VIEW vCelestialShip_LightFighter AS
+    SELECT tbCelestial.ID,
+           1 AS pIdShip,
+           IFNULL(tbCelestialShip.nShips, 0) AS nShips
+      FROM tbCelestial
+           LEFT OUTER JOIN
+           tbCelestialShip ON tbCelestial.ID = tbCelestialShip.pIdCelestial
+     WHERE tbCelestialShip.pIdShip = 1 OR 
+           tbCelestialShip.pIdShip IS NULL;
+
+
+-- View: vCelestialShip_Pathfinder
+DROP VIEW IF EXISTS vCelestialShip_Pathfinder;
+CREATE VIEW vCelestialShip_Pathfinder AS
+    SELECT tbCelestial.ID,
+           17 AS pIdShip,
+           IFNULL(tbCelestialShip.nShips, 0) AS nShips
+      FROM tbCelestial
+           LEFT OUTER JOIN
+           tbCelestialShip ON tbCelestial.ID = tbCelestialShip.pIdCelestial
+     WHERE tbCelestialShip.pIdShip = 17 OR 
+           tbCelestialShip.pIdShip IS NULL;
+
+
+-- View: vCelestialShip_Reaper
+DROP VIEW IF EXISTS vCelestialShip_Reaper;
+CREATE VIEW vCelestialShip_Reaper AS
+    SELECT tbCelestial.ID,
+           16 AS pIdShip,
+           IFNULL(tbCelestialShip.nShips, 0) AS nShips
+      FROM tbCelestial
+           LEFT OUTER JOIN
+           tbCelestialShip ON tbCelestial.ID = tbCelestialShip.pIdCelestial
+     WHERE tbCelestialShip.pIdShip = 16 OR 
+           tbCelestialShip.pIdShip IS NULL;
+
+
+-- View: vCelestialShip_Recycler
+DROP VIEW IF EXISTS vCelestialShip_Recycler;
+CREATE VIEW vCelestialShip_Recycler AS
+    SELECT tbCelestial.ID,
+           12 AS pIdShip,
+           IFNULL(tbCelestialShip.nShips, 0) AS nShips
+      FROM tbCelestial
+           LEFT OUTER JOIN
+           tbCelestialShip ON tbCelestial.ID = tbCelestialShip.pIdCelestial
+     WHERE tbCelestialShip.pIdShip = 12 OR 
+           tbCelestialShip.pIdShip IS NULL;
+
+
+-- View: vCelestialShip_SmallCargo
+DROP VIEW IF EXISTS vCelestialShip_SmallCargo;
+CREATE VIEW vCelestialShip_SmallCargo AS
+    SELECT tbCelestial.ID,
+           9 AS pIdShip,
+           IFNULL(tbCelestialShip.nShips, 0) AS nShips
+      FROM tbCelestial
+           LEFT OUTER JOIN
+           tbCelestialShip ON tbCelestial.ID = tbCelestialShip.pIdCelestial
+     WHERE tbCelestialShip.pIdShip = 9 OR 
+           tbCelestialShip.pIdShip IS NULL;
+
+
+-- View: vCelestialShip_SolarSatellite
+DROP VIEW IF EXISTS vCelestialShip_SolarSatellite;
+CREATE VIEW vCelestialShip_SolarSatellite AS
+    SELECT tbCelestial.ID,
+           14 AS pIdShip,
+           IFNULL(tbCelestialShip.nShips, 0) AS nShips
+      FROM tbCelestial
+           LEFT OUTER JOIN
+           tbCelestialShip ON tbCelestial.ID = tbCelestialShip.pIdCelestial
+     WHERE tbCelestialShip.pIdShip = 14 OR 
+           tbCelestialShip.pIdShip IS NULL;
+
+
+-- View: vCelestialShips
+DROP VIEW IF EXISTS vCelestialShips;
+CREATE VIEW vCelestialShips AS
+    SELECT tbCelestial.ID,
+           IFNULL(vCelestialShip_BattleCruiser.nships, 0) AS nBattleCruiser,
+           IFNULL(vCelestialShip_Battleship.nShips, 0) AS nBattleship,
+           IFNULL(vCelestialShip_Bomber.nShips, 0) AS nBomber,
+           IFNULL(vCelestialShip_ColonyShip.nShips, 0) AS nColonyShip,
+           IFNULL(vCelestialShip_Crawler.nShips, 0) AS nCrawler,
+           IFNULL(vCelestialShip_Cruiser.nShips, 0) AS nCruiser,
+           IFNULL(vCelestialShip_Deathstar.nShips, 0) AS nDeathStar,
+           IFNULL(vCelestialShip_Destroyer.nShips, 0) AS nDestroyer,
+           IFNULL(vCelestialShip_EspionageProbe.nShips, 0) AS nEspionageProbe,
+           IFNULL(vCelestialShip_HeavyFighter.nShips, 0) AS nHeavyFighter,
+           IFNULL(vCelestialShip_LargeCargo.nShips, 0) AS nLargeCargo,
+           IFNULL(vCelestialShip_LightFighter.nShips, 0) AS nLightFighter,
+           IFNULL(vCelestialShip_Pathfinder.nShips, 0) AS nPathFinder,
+           IFNULL(vCelestialShip_Reaper.nShips, 0) AS nReaper,
+           IFNULL(vCelestialShip_Recycler.nShips, 0) AS nRecycler,
+           IFNULL(vCelestialShip_SmallCargo.nShips, 0) AS nSmallCargo,
+           IFNULL(vCelestialShip_SolarSatellite.nShips, 0) AS nSolarSatellite
+      FROM tbCelestial
+           INNER JOIN
+           vCelestialShip_BattleCruiser ON tbcelestial.ID = vCelestialShip_BattleCruiser.ID
+           INNER JOIN
+           vCelestialShip_Battleship ON tbCelestial.ID = vCelestialShip_Battleship.ID
+           INNER JOIN
+           vCelestialShip_Bomber ON tbCelestial.ID = vCelestialShip_Bomber.ID
+           INNER JOIN
+           vCelestialShip_ColonyShip ON tbCelestial.ID = vCelestialShip_ColonyShip.ID
+           INNER JOIN
+           vCelestialShip_Crawler ON tbCelestial.ID = vCelestialShip_Crawler.ID
+           INNER JOIN
+           vCelestialShip_Cruiser ON tbCelestial.ID = vCelestialShip_Cruiser.ID
+           INNER JOIN
+           vCelestialShip_Deathstar ON tbCelestial.ID = vCelestialShip_Deathstar.ID
+           INNER JOIN
+           vCelestialShip_Destroyer ON tbCelestial.ID = vCelestialShip_Destroyer.ID
+           INNER JOIN
+           vCelestialShip_EspionageProbe ON tbCelestial.ID = vCelestialShip_EspionageProbe.ID
+           INNER JOIN
+           vCelestialShip_HeavyFighter ON tbCelestial.ID = vCelestialShip_HeavyFighter.ID
+           INNER JOIN
+           vCelestialShip_LargeCargo ON tbCelestial.ID = vCelestialShip_LargeCargo.ID
+           INNER JOIN
+           vCelestialShip_LightFighter ON tbCelestial.ID = vCelestialShip_LightFighter.ID
+           INNER JOIN
+           vCelestialShip_Pathfinder ON tbCelestial.ID = vCelestialShip_Pathfinder.ID
+           INNER JOIN
+           vCelestialShip_Reaper ON tbCelestial.ID = vCelestialShip_Reaper.ID
+           INNER JOIN
+           vCelestialShip_Recycler ON tbCelestial.ID = vCelestialShip_Recycler.ID
+           INNER JOIN
+           vCelestialShip_SmallCargo ON tbCelestial.ID = vCelestialShip_SmallCargo.ID
+           INNER JOIN
+           vCelestialShip_SolarSatellite ON tbCelestial.ID = vCelestialShip_SolarSatellite.ID;
 
 
 COMMIT TRANSACTION;
 PRAGMA foreign_keys = on;
+
 ";
 
                 SQLiteCommand xLocCommand = new SQLiteCommand(sSQL, xDbMasterConnection);
